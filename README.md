@@ -45,6 +45,33 @@ Copy all files from custom_components/jarolift in this repo to your config custo
 
 ### Setup
 
+**Note:** Starting with version 2.0.0, the integration supports configuration via the Home Assistant UI. YAML configuration is still supported for backward compatibility and will be automatically migrated to UI configuration.
+
+#### Setup via UI (Recommended)
+
+1. Go to **Settings** → **Devices & Services** in Home Assistant
+2. Click **+ ADD INTEGRATION**
+3. Search for "Jarolift" and select it
+4. Enter the following information:
+   - **Remote Entity ID**: The entity ID of your RF remote (e.g., `remote.broadlink_rm_proplus_remote`)
+   - **Manufacturer Key MSB**: Most significant bits of the manufacturer key in hex format (e.g., `0x12345678`)
+   - **Manufacturer Key LSB**: Least significant bits of the manufacturer key in hex format (e.g., `0x87654321`)
+   - **Delay** (optional): Delay in seconds between sending commands to different covers (default: 0)
+5. Click **Submit**
+6. The integration is now configured. To add covers, click **Configure** on the Jarolift integration card
+7. Select "Add new cover" and enter:
+   - **Name**: Friendly name for the cover (e.g., "Living Room Cover")
+   - **Group**: Group ID in hex format (e.g., `0x0001`)
+   - **Serial**: Serial number in hex format (e.g., `0x106aa01`)
+   - **Repeat Count** (optional): Number of times to repeat transmission (default: 0)
+   - **Repeat Delay** (optional): Delay between repeated transmissions in seconds (default: 0.2)
+   - **Reverse Up/Down** (optional): Check this if your cover closes on "up" and opens on "down"
+8. Repeat step 7 for each cover you want to add
+
+#### Setup via YAML (Legacy - Will be migrated automatically)
+
+If you have an existing YAML configuration, it will be automatically imported to UI configuration on the next Home Assistant restart.
+
 Enter following lines to `configuration.yaml`
 
 ```yaml
@@ -57,7 +84,8 @@ Manufacturer key can be found on pastebin (just google it)
 
 You can then use the new cover platform like this:
 ```yaml
-- platform: jarolift
+cover:
+  - platform: jarolift
   covers:
     - name: 'Livingroom Main Cover'
       group: '0x0001'
@@ -70,6 +98,8 @@ You can then use the new cover platform like this:
 
 Make sure Home Assistant can write files in the config directory. The integration will write one to keep
 track of the current count of command sent per serial. This count is required for the KeeLoq encryption.
+
+**After YAML import:** Once your configuration has been imported to UI configuration, you can safely remove the Jarolift configuration from your `configuration.yaml` file. The integration will continue to work with the UI-based configuration. All future cover management should be done through the UI (Settings → Devices & Services → Jarolift → Configure).
 
 Save the configuration file and restart Home Assistant.
 

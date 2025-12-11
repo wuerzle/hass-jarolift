@@ -4,22 +4,28 @@ Support for Jarolift cover
 
 import logging
 
-import homeassistant.helpers.config_validation as cv
-import voluptuous as vol
 from homeassistant.components.cover import (
     PLATFORM_SCHEMA,
     CoverDeviceClass,
     CoverEntity,
     CoverEntityFeature,
 )
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_NAME
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+import homeassistant.helpers.config_validation as cv
+import voluptuous as vol
 
-CONF_COVERS = "covers"
-CONF_GROUP = "group"
-CONF_SERIAL = "serial"
-CONF_REP_COUNT = "repeat_count"
-CONF_REP_DELAY = "repeat_delay"
-CONF_REVERSE = "reverse"
+from . import (
+    CONF_COVERS,
+    CONF_GROUP,
+    CONF_REP_COUNT,
+    CONF_REP_DELAY,
+    CONF_REVERSE,
+    CONF_SERIAL,
+    DOMAIN,
+)
 
 _COVERS_SCHEMA = vol.All(
     cv.ensure_list,
@@ -49,9 +55,24 @@ _LOGGER = logging.getLogger(__name__)
 
 
 def setup_platform(hass, config, add_devices, discovery_info=None):
-    """Set up the Jarolift covers."""
+    """Set up the Jarolift covers from YAML (backward compatibility)."""
     covers = []
     covers_conf = config.get(CONF_COVERS)
+
+    # Store cover configs for migration if YAML import is pending
+    yaml_covers = hass.data.get(DOMAIN, {}).get("yaml_covers")
+    if yaml_covers is not None:
+        for cover in covers_conf:
+            yaml_covers.append(
+                {
+                    CONF_NAME: cover[CONF_NAME],
+                    CONF_GROUP: cover[CONF_GROUP],
+                    CONF_SERIAL: cover[CONF_SERIAL],
+                    CONF_REP_COUNT: cover.get(CONF_REP_COUNT, 0),
+                    CONF_REP_DELAY: cover.get(CONF_REP_DELAY, 0.2),
+                    CONF_REVERSE: cover.get(CONF_REVERSE, False),
+                }
+            )
 
     for cover in covers_conf:
         covers.append(
@@ -66,6 +87,31 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
             )
         )
     add_devices(covers)
+
+
+async def async_setup_entry(
+    hass: HomeAssistant,
+    config_entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    """Set up Jarolift covers from a config entry."""
+    covers = []
+    entry_data = hass.data[DOMAIN][config_entry.entry_id]
+    covers_conf = entry_data.get(CONF_COVERS, [])
+
+    for cover in covers_conf:
+        covers.append(
+            JaroliftCover(
+                cover[CONF_NAME],
+                cover[CONF_GROUP],
+                cover[CONF_SERIAL],
+                cover.get(CONF_REP_COUNT, 0),
+                cover.get(CONF_REP_DELAY, 0.2),
+                cover.get(CONF_REVERSE, False),
+                hass,
+            )
+        )
+    async_add_entities(covers)
 
 
 class JaroliftCover(CoverEntity):

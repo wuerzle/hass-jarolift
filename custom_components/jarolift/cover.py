@@ -1,6 +1,7 @@
 """
 Support for Jarolift cover
 """
+
 import logging
 
 import homeassistant.helpers.config_validation as cv
@@ -30,7 +31,7 @@ _COVERS_SCHEMA = vol.All(
                 vol.Required(CONF_SERIAL): cv.string,
                 vol.Optional(CONF_REP_COUNT, default=0): cv.positive_int,
                 vol.Optional(CONF_REP_DELAY, default=0.2): cv.positive_float,
-                vol.Optional(CONF_REVERSE, default=False): cv.boolean
+                vol.Optional(CONF_REVERSE, default=False): cv.boolean,
             }
         )
     ],
@@ -54,7 +55,15 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
 
     for cover in covers_conf:
         covers.append(
-            JaroliftCover(cover[CONF_NAME], cover[CONF_GROUP], cover[CONF_SERIAL], cover[CONF_REP_COUNT], cover[CONF_REP_DELAY], cover[CONF_REVERSE], hass)
+            JaroliftCover(
+                cover[CONF_NAME],
+                cover[CONF_GROUP],
+                cover[CONF_SERIAL],
+                cover[CONF_REP_COUNT],
+                cover[CONF_REP_DELAY],
+                cover[CONF_REVERSE],
+                hass,
+            )
         )
     add_devices(covers)
 
@@ -64,7 +73,7 @@ class JaroliftCover(CoverEntity):
 
     code_down = "0x2"
     code_stop = "0x4"
-    code_up   = "0x8"
+    code_up = "0x8"
 
     def __init__(self, name, group, serial, rep_count, rep_delay, reversed, hass):
         """Initialize the jarolift device."""
@@ -75,8 +84,6 @@ class JaroliftCover(CoverEntity):
         self._rep_delay = rep_delay
         self._reversed = reversed
         self._hass = hass
-        self._isClosed = False
-        self._position = 50
         supported_features = 0
         supported_features |= CoverEntityFeature.OPEN
         supported_features |= CoverEntityFeature.CLOSE
@@ -107,40 +114,38 @@ class JaroliftCover(CoverEntity):
 
     @property
     def is_closed(self):
-        """Return true if cover is closed."""
-        return self._isClosed
+        """Return true if cover is closed, None if unknown."""
+        return None
 
     @property
     def current_cover_position(self):
         """Return the current position of the cover.
         None is unknown, 0 is closed, 100 is fully open.
         """
-        return self._position
+        return None
 
     async def async_close_cover(self, **kwargs):
         """Close the cover."""
-        self._isClosed = True
-        self._position = 0
         actual_code = type(self).code_up if self._reversed else type(self).code_down
-        _LOGGER.debug("closing cover, sending %s (reversed=%s)", actual_code, self._reversed)
+        _LOGGER.debug(
+            "closing cover, sending %s (reversed=%s)", actual_code, self._reversed
+        )
         await self.async_push_button(actual_code)
 
     async def async_open_cover(self, **kwargs):
         """Open the cover."""
-        self._isClosed = False
-        self._position = 100
         actual_code = type(self).code_down if self._reversed else type(self).code_up
-        _LOGGER.debug("opening cover, sending %s (reversed=%s)", actual_code, self._reversed)
+        _LOGGER.debug(
+            "opening cover, sending %s (reversed=%s)", actual_code, self._reversed
+        )
         await self.async_push_button(actual_code)
 
     async def async_stop_cover(self, **kwargs):
         """Stop the cover."""
-        self._isClosed = False
-        self._position = 50
-        _LOGGER.debug("closing cover")
+        _LOGGER.debug("stopping cover")
         await self.async_push_button(type(self).code_stop)
 
-    async def async_push_button( self, value ):
+    async def async_push_button(self, value):
         await self._hass.services.async_call(
             "jarolift",
             "send_command",
@@ -149,7 +154,7 @@ class JaroliftCover(CoverEntity):
                 "serial": self._serial,
                 "rep_count": self._rep_count,
                 "rep_delay": self._rep_delay,
-                "button": value
-            }
+                "button": value,
+            },
         )
         self.async_schedule_update_ha_state(True)

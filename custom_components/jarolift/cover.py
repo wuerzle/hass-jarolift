@@ -3,17 +3,15 @@ Support for Jarolift cover
 """
 import logging
 
+import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
-
 from homeassistant.components.cover import (
-    CoverEntityFeature,
     PLATFORM_SCHEMA,
     CoverDeviceClass,
     CoverEntity,
+    CoverEntityFeature,
 )
-
 from homeassistant.const import CONF_NAME
-import homeassistant.helpers.config_validation as cv
 
 CONF_COVERS = "covers"
 CONF_GROUP = "group"
@@ -85,7 +83,7 @@ class JaroliftCover(CoverEntity):
         supported_features |= CoverEntityFeature.STOP
         self._attr_supported_features = supported_features
         self._attr_device_class = CoverDeviceClass.BLIND
-        self._attr_unique_id = "jarolift_" + serial
+        self._attr_unique_id = f"jarolift_{serial}_{group}"
 
     @property
     def serial(self):

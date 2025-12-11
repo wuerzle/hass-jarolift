@@ -34,11 +34,11 @@ configured.
 
 ### Get the integration
 
-## Manual installation
+### Manual installation
 
 Copy all files from custom_components/jarolift in this repo to your config custom_components/jarolift.
 
-## Via HACS
+### Via HACS
 
 1. Add this repository as HACS repository (type: integration)
 2. Search for 'jarolift' and install the integration
@@ -80,7 +80,7 @@ The integration provides following services:
 * jarolift.send_command
 * jarolift.send_raw
 
-Those are documented in the [services.yaml](https://github.com/4cc8783b/hass-jarolift/blob/main/custom_components/jarolift/services.yaml).
+Those are documented in the [services.yaml](https://github.com/wuerzle/hass-jarolift/blob/main/custom_components/jarolift/services.yaml).
 
 ## Learn covers
 

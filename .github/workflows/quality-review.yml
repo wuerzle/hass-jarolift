@@ -1,4 +1,6 @@
 name: Quality Review
+permissions:
+  contents: read
 
 on:
   push:

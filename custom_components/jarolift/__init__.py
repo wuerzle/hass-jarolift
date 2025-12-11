@@ -215,11 +215,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Jarolift from a config entry."""
     hass.data.setdefault(DOMAIN, {})
     
+    # Convert hex strings to integers
+    msb_value = int(entry.data[CONF_MSB], 16)
+    lsb_value = int(entry.data[CONF_LSB], 16)
+    
     # Store the config entry data
     hass.data[DOMAIN][entry.entry_id] = {
         CONF_REMOTE_ENTITY_ID: entry.data[CONF_REMOTE_ENTITY_ID],
-        CONF_MSB: int(entry.data[CONF_MSB], 16),
-        CONF_LSB: int(entry.data[CONF_LSB], 16),
+        CONF_MSB: msb_value,
+        CONF_LSB: lsb_value,
         CONF_DELAY: entry.data.get(CONF_DELAY, 0),
         CONF_COVERS: entry.options.get(CONF_COVERS, []),
     }
@@ -229,8 +233,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     _register_services(
         hass,
         entry.data[CONF_REMOTE_ENTITY_ID],
-        int(entry.data[CONF_MSB], 16),
-        int(entry.data[CONF_LSB], 16),
+        msb_value,
+        lsb_value,
         entry.data.get(CONF_DELAY, 0),
         counter_file,
     )

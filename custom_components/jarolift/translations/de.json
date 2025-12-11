@@ -1,4 +1,106 @@
 {
+  "config": {
+    "step": {
+      "user": {
+        "title": "Jarolift Integration konfigurieren",
+        "description": "Richten Sie die Jarolift Integration mit Ihrer Fernbedienungs-Entität und den Herstellerschlüsseln ein.",
+        "data": {
+          "remote_entity_id": "Fernbedienungs-Entitäts-ID",
+          "MSB": "Herstellerschlüssel MSB (Most Significant Bits)",
+          "LSB": "Herstellerschlüssel LSB (Least Significant Bits)",
+          "delay": "Verzögerung zwischen Befehlen (Sekunden)"
+        },
+        "data_description": {
+          "remote_entity_id": "Die Entitäts-ID Ihrer Fernbedienung (z.B. remote.broadlink_rm_proplus_remote)",
+          "MSB": "Der MSB-Teil des Herstellerschlüssels im Hex-Format (z.B. '0x12345678')",
+          "LSB": "Der LSB-Teil des Herstellerschlüssels im Hex-Format (z.B. '0x87654321')",
+          "delay": "Optionale Verzögerung zwischen dem Senden von Befehlen an verschiedene Rollos"
+        }
+      },
+      "import": {
+        "title": "Jarolift Konfiguration importieren",
+        "description": "Ihre bestehende YAML-Konfiguration wurde importiert. Sie können jetzt Rollos über die Benutzeroberfläche verwalten."
+      }
+    },
+    "error": {
+      "invalid_remote_entity": "Die angegebene Fernbedienungs-Entität existiert nicht"
+    },
+    "abort": {
+      "already_configured": "Jarolift ist bereits konfiguriert"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Jarolift Rollos verwalten",
+        "description": "Konfigurieren Sie Ihre Jarolift Rollos.\n\nAktuell konfigurierte Rollos:\n{covers}"
+      },
+      "manage_covers": {
+        "title": "Jarolift Rollos verwalten",
+        "description": "Konfigurieren Sie Ihre Jarolift Rollos.\n\nAktuell konfigurierte Rollos:\n{covers}",
+        "data": {
+          "action": "Aktion"
+        }
+      },
+      "add_cover": {
+        "title": "Neues Rollo hinzufügen",
+        "description": "Fügen Sie ein neues Jarolift Rollo zur Integration hinzu.",
+        "data": {
+          "name": "Name",
+          "group": "Gruppe",
+          "serial": "Seriennummer",
+          "repeat_count": "Wiederholungszähler",
+          "repeat_delay": "Wiederholungsverzögerung (Sekunden)",
+          "reverse": "Auf/Ab umkehren"
+        },
+        "data_description": {
+          "name": "Anzeigename für das Rollo",
+          "group": "Gruppen-ID im Hex-Format (z.B. '0x0001')",
+          "serial": "Seriennummer im Hex-Format (z.B. '0x106aa01')",
+          "repeat_count": "Anzahl der Übertragungswiederholungen (Standard: 0)",
+          "repeat_delay": "Verzögerung zwischen wiederholten Übertragungen in Sekunden (Standard: 0.2)",
+          "reverse": "Auf- und Ab-Befehle umkehren, wenn das Rollo rückwärts verkabelt ist"
+        }
+      },
+      "select_cover_to_edit": {
+        "title": "Rollo zum Bearbeiten auswählen",
+        "description": "Wählen Sie ein Rollo zum Bearbeiten aus.",
+        "data": {
+          "cover_index": "Rollo"
+        }
+      },
+      "edit_cover": {
+        "title": "Rollo bearbeiten",
+        "description": "Bearbeiten Sie die Konfiguration des ausgewählten Rollos.",
+        "data": {
+          "name": "Name",
+          "group": "Gruppe",
+          "serial": "Seriennummer",
+          "repeat_count": "Wiederholungszähler",
+          "repeat_delay": "Wiederholungsverzögerung (Sekunden)",
+          "reverse": "Auf/Ab umkehren"
+        },
+        "data_description": {
+          "name": "Anzeigename für das Rollo",
+          "group": "Gruppen-ID im Hex-Format (z.B. '0x0001')",
+          "serial": "Seriennummer im Hex-Format (z.B. '0x106aa01')",
+          "repeat_count": "Anzahl der Übertragungswiederholungen (Standard: 0)",
+          "repeat_delay": "Verzögerung zwischen wiederholten Übertragungen in Sekunden (Standard: 0.2)",
+          "reverse": "Auf- und Ab-Befehle umkehren, wenn das Rollo rückwärts verkabelt ist"
+        }
+      },
+      "select_cover_to_remove": {
+        "title": "Rollo zum Entfernen auswählen",
+        "description": "Wählen Sie ein Rollo zum Entfernen aus.",
+        "data": {
+          "cover_index": "Rollo"
+        }
+      }
+    },
+    "error": {
+      "duplicate_cover": "Ein Rollo mit dieser Serien- und Gruppenkombination existiert bereits"
+    }
+  },
   "services": {
     "send_raw": {
       "name": "Rohdaten senden",

@@ -1,0 +1,104 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Configure Jarolift Integration",
+        "description": "Set up the Jarolift integration with your remote entity and manufacturer keys.",
+        "data": {
+          "remote_entity_id": "Remote Entity ID",
+          "MSB": "Manufacturer Key MSB (Most Significant Bits)",
+          "LSB": "Manufacturer Key LSB (Least Significant Bits)",
+          "delay": "Delay between commands (seconds)"
+        },
+        "data_description": {
+          "remote_entity_id": "The entity ID of your remote (e.g., remote.broadlink_rm_proplus_remote)",
+          "MSB": "The MSB part of the manufacturer key in hex format (e.g., '0x12345678')",
+          "LSB": "The LSB part of the manufacturer key in hex format (e.g., '0x87654321')",
+          "delay": "Optional delay between sending commands to different covers"
+        }
+      },
+      "import": {
+        "title": "Import Jarolift Configuration",
+        "description": "Your existing YAML configuration has been imported. You can now manage covers through the UI."
+      }
+    },
+    "error": {
+      "invalid_remote_entity": "The specified remote entity does not exist"
+    },
+    "abort": {
+      "already_configured": "Jarolift is already configured"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Manage Jarolift Covers",
+        "description": "Configure your Jarolift covers.\n\nCurrently configured covers:\n{covers}"
+      },
+      "manage_covers": {
+        "title": "Manage Jarolift Covers",
+        "description": "Configure your Jarolift covers.\n\nCurrently configured covers:\n{covers}",
+        "data": {
+          "action": "Action"
+        }
+      },
+      "add_cover": {
+        "title": "Add New Cover",
+        "description": "Add a new Jarolift cover to the integration.",
+        "data": {
+          "name": "Name",
+          "group": "Group",
+          "serial": "Serial",
+          "repeat_count": "Repeat Count",
+          "repeat_delay": "Repeat Delay (seconds)",
+          "reverse": "Reverse Up/Down"
+        },
+        "data_description": {
+          "name": "Friendly name for the cover",
+          "group": "Group ID in hex format (e.g., '0x0001')",
+          "serial": "Serial number in hex format (e.g., '0x106aa01')",
+          "repeat_count": "Number of times to repeat transmission (default: 0)",
+          "repeat_delay": "Delay between repeated transmissions in seconds (default: 0.2)",
+          "reverse": "Reverse up and down commands if cover is wired backwards"
+        }
+      },
+      "select_cover_to_edit": {
+        "title": "Select Cover to Edit",
+        "description": "Choose a cover to edit.",
+        "data": {
+          "cover_index": "Cover"
+        }
+      },
+      "edit_cover": {
+        "title": "Edit Cover",
+        "description": "Edit the selected cover configuration.",
+        "data": {
+          "name": "Name",
+          "group": "Group",
+          "serial": "Serial",
+          "repeat_count": "Repeat Count",
+          "repeat_delay": "Repeat Delay (seconds)",
+          "reverse": "Reverse Up/Down"
+        },
+        "data_description": {
+          "name": "Friendly name for the cover",
+          "group": "Group ID in hex format (e.g., '0x0001')",
+          "serial": "Serial number in hex format (e.g., '0x106aa01')",
+          "repeat_count": "Number of times to repeat transmission (default: 0)",
+          "repeat_delay": "Delay between repeated transmissions in seconds (default: 0.2)",
+          "reverse": "Reverse up and down commands if cover is wired backwards"
+        }
+      },
+      "select_cover_to_remove": {
+        "title": "Select Cover to Remove",
+        "description": "Choose a cover to remove.",
+        "data": {
+          "cover_index": "Cover"
+        }
+      }
+    },
+    "error": {
+      "duplicate_cover": "A cover with this serial and group combination already exists"
+    }
+  }
+}

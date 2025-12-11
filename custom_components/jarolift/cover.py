@@ -58,6 +58,20 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
     covers = []
     covers_conf = config.get(CONF_COVERS)
 
+    # Store cover configs for migration if YAML import is pending
+    if DOMAIN in hass.data and "yaml_covers" in hass.data[DOMAIN]:
+        for cover in covers_conf:
+            hass.data[DOMAIN]["yaml_covers"].append(
+                {
+                    CONF_NAME: cover[CONF_NAME],
+                    CONF_GROUP: cover[CONF_GROUP],
+                    CONF_SERIAL: cover[CONF_SERIAL],
+                    CONF_REP_COUNT: cover.get(CONF_REP_COUNT, 0),
+                    CONF_REP_DELAY: cover.get(CONF_REP_DELAY, 0.2),
+                    CONF_REVERSE: cover.get(CONF_REVERSE, False),
+                }
+            )
+
     for cover in covers_conf:
         covers.append(
             JaroliftCover(

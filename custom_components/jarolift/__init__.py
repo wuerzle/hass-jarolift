@@ -189,15 +189,19 @@ def setup(hass, config):
     # Store YAML config temporarily for migration
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN]["yaml_config"] = config
+    hass.data[DOMAIN]["yaml_covers"] = []  # Will be populated by setup_platform
 
-    # Trigger import flow for migration
-    hass.async_create_task(
-        hass.config_entries.flow.async_init(
+    # Trigger import flow for migration (delayed to allow covers to be registered)
+    async def trigger_import():
+        """Trigger import after a delay to allow cover platform setup."""
+        await hass.async_block_till_done()
+        await hass.config_entries.flow.async_init(
             DOMAIN,
             context={"source": "import"},
             data=config,
         )
-    )
+
+    hass.async_create_task(trigger_import())
 
     # Legacy setup for backward compatibility
     remote_entity_id = config[DOMAIN][CONF_REMOTE_ENTITY_ID]

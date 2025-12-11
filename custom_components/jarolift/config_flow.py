@@ -77,30 +77,34 @@ class JaroliftConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         await self.async_set_unique_id(DOMAIN)
         self._abort_if_unique_id_configured()
 
-        # Extract jarolift config
-        jarolift_config = import_data.get("jarolift", {})
-        covers_config = import_data.get("covers", [])
+        # Extract jarolift config - import_data contains the full config dict
+        jarolift_config = import_data.get(DOMAIN, {})
+        
+        # Validate required keys
+        if not jarolift_config:
+            _LOGGER.error("No jarolift configuration found in import data")
+            return self.async_abort(reason="missing_configuration")
+        
+        try:
+            remote_entity_id = jarolift_config[CONF_REMOTE_ENTITY_ID]
+            msb = jarolift_config[CONF_MSB]
+            lsb = jarolift_config[CONF_LSB]
+        except KeyError as err:
+            _LOGGER.error("Missing required configuration key: %s", err)
+            return self.async_abort(reason="missing_configuration")
 
-        # Convert covers to the format expected by options
+        # Retrieve covers that were stored by setup_platform during YAML setup
         covers_list = []
-        for cover in covers_config:
-            covers_list.append(
-                {
-                    CONF_NAME: cover[CONF_NAME],
-                    CONF_GROUP: cover[CONF_GROUP],
-                    CONF_SERIAL: cover[CONF_SERIAL],
-                    CONF_REP_COUNT: cover.get(CONF_REP_COUNT, 0),
-                    CONF_REP_DELAY: cover.get(CONF_REP_DELAY, 0.2),
-                    CONF_REVERSE: cover.get(CONF_REVERSE, False),
-                }
-            )
+        if DOMAIN in self.hass.data and "yaml_covers" in self.hass.data[DOMAIN]:
+            covers_list = self.hass.data[DOMAIN].get("yaml_covers", [])
+            _LOGGER.info("Importing %d cover(s) from YAML configuration", len(covers_list))
 
         return self.async_create_entry(
             title="Jarolift",
             data={
-                CONF_REMOTE_ENTITY_ID: jarolift_config[CONF_REMOTE_ENTITY_ID],
-                CONF_MSB: jarolift_config[CONF_MSB],
-                CONF_LSB: jarolift_config[CONF_LSB],
+                CONF_REMOTE_ENTITY_ID: remote_entity_id,
+                CONF_MSB: msb,
+                CONF_LSB: lsb,
                 CONF_DELAY: jarolift_config.get(CONF_DELAY, 0),
             },
             options={

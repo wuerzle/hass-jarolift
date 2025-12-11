@@ -17,14 +17,15 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 
-from . import DOMAIN
-
-CONF_COVERS = "covers"
-CONF_GROUP = "group"
-CONF_SERIAL = "serial"
-CONF_REP_COUNT = "repeat_count"
-CONF_REP_DELAY = "repeat_delay"
-CONF_REVERSE = "reverse"
+from . import (
+    CONF_COVERS,
+    CONF_GROUP,
+    CONF_REP_COUNT,
+    CONF_REP_DELAY,
+    CONF_REVERSE,
+    CONF_SERIAL,
+    DOMAIN,
+)
 
 _COVERS_SCHEMA = vol.All(
     cv.ensure_list,

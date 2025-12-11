@@ -9,20 +9,21 @@ from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
 import homeassistant.helpers.config_validation as cv
 
-from . import DOMAIN
+from . import (
+    CONF_COVERS,
+    CONF_DELAY,
+    CONF_GROUP,
+    CONF_LSB,
+    CONF_MSB,
+    CONF_REMOTE_ENTITY_ID,
+    CONF_REP_COUNT,
+    CONF_REP_DELAY,
+    CONF_REVERSE,
+    CONF_SERIAL,
+    DOMAIN,
+)
 
 _LOGGER = logging.getLogger(__name__)
-
-CONF_REMOTE_ENTITY_ID = "remote_entity_id"
-CONF_MSB = "MSB"
-CONF_LSB = "LSB"
-CONF_DELAY = "delay"
-CONF_COVERS = "covers"
-CONF_GROUP = "group"
-CONF_SERIAL = "serial"
-CONF_REP_COUNT = "repeat_count"
-CONF_REP_DELAY = "repeat_delay"
-CONF_REVERSE = "reverse"
 
 
 class JaroliftConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):

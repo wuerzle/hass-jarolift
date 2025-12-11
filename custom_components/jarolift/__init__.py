@@ -27,6 +27,11 @@ CONF_MSB = "MSB"
 CONF_LSB = "LSB"
 CONF_DELAY = "delay"
 CONF_COVERS = "covers"
+CONF_GROUP = "group"
+CONF_SERIAL = "serial"
+CONF_REP_COUNT = "repeat_count"
+CONF_REP_DELAY = "repeat_delay"
+CONF_REVERSE = "reverse"
 
 # Button codes for Jarolift commands
 BUTTON_LEARN = 0xA

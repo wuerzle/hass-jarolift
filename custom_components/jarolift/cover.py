@@ -59,9 +59,10 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
     covers_conf = config.get(CONF_COVERS)
 
     # Store cover configs for migration if YAML import is pending
-    if DOMAIN in hass.data and "yaml_covers" in hass.data[DOMAIN]:
+    yaml_covers = hass.data.get(DOMAIN, {}).get("yaml_covers")
+    if yaml_covers is not None:
         for cover in covers_conf:
-            hass.data[DOMAIN]["yaml_covers"].append(
+            yaml_covers.append(
                 {
                     CONF_NAME: cover[CONF_NAME],
                     CONF_GROUP: cover[CONF_GROUP],

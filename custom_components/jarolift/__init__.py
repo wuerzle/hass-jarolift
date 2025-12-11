@@ -181,6 +181,11 @@ def send_remote_command(hass, remote_entity_id, packet):
     )
 
 
+def _parse_hex_config_value(value: str) -> int:
+    """Parse a hex configuration value to integer."""
+    return int(value, 16)
+
+
 def setup(hass, config):
     """Set up the Jarolift integration from YAML (backward compatibility)."""
     if DOMAIN not in config:
@@ -192,7 +197,7 @@ def setup(hass, config):
     hass.data[DOMAIN]["yaml_covers"] = []  # Will be populated by setup_platform
 
     # Trigger import flow for migration (delayed to allow covers to be registered)
-    async def trigger_import():
+    async def schedule_import_after_covers_setup():
         """Trigger import after a delay to allow cover platform setup."""
         await hass.async_block_till_done()
         await hass.config_entries.flow.async_init(
@@ -201,12 +206,12 @@ def setup(hass, config):
             data=config,
         )
 
-    hass.async_create_task(trigger_import())
+    hass.async_create_task(schedule_import_after_covers_setup())
 
     # Legacy setup for backward compatibility
     remote_entity_id = config[DOMAIN][CONF_REMOTE_ENTITY_ID]
-    MSB = int(config[DOMAIN][CONF_MSB], 16)
-    LSB = int(config[DOMAIN][CONF_LSB], 16)
+    MSB = _parse_hex_config_value(config[DOMAIN][CONF_MSB])
+    LSB = _parse_hex_config_value(config[DOMAIN][CONF_LSB])
     DELAY = config[DOMAIN].get(CONF_DELAY, 0)
     counter_file = hass.config.path("counter_")
 
@@ -220,8 +225,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data.setdefault(DOMAIN, {})
     
     # Convert hex strings to integers
-    msb_value = int(entry.data[CONF_MSB], 16)
-    lsb_value = int(entry.data[CONF_LSB], 16)
+    msb_value = _parse_hex_config_value(entry.data[CONF_MSB])
+    lsb_value = _parse_hex_config_value(entry.data[CONF_LSB])
     
     # Store the config entry data
     hass.data[DOMAIN][entry.entry_id] = {

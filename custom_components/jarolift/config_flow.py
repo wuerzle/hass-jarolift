@@ -78,25 +78,26 @@ class JaroliftConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self._abort_if_unique_id_configured()
 
         # Extract jarolift config - import_data contains the full config dict
-        jarolift_config = import_data.get(DOMAIN, {})
+        domain_config = import_data.get(DOMAIN, {})
         
         # Validate required keys
-        if not jarolift_config:
+        if not domain_config:
             _LOGGER.error("No jarolift configuration found in import data")
             return self.async_abort(reason="missing_configuration")
         
         try:
-            remote_entity_id = jarolift_config[CONF_REMOTE_ENTITY_ID]
-            msb = jarolift_config[CONF_MSB]
-            lsb = jarolift_config[CONF_LSB]
+            remote_entity_id = domain_config[CONF_REMOTE_ENTITY_ID]
+            msb = domain_config[CONF_MSB]
+            lsb = domain_config[CONF_LSB]
         except KeyError as err:
             _LOGGER.error("Missing required configuration key: %s", err)
             return self.async_abort(reason="missing_configuration")
 
         # Retrieve covers that were stored by setup_platform during YAML setup
         covers_list = []
-        if DOMAIN in self.hass.data and "yaml_covers" in self.hass.data[DOMAIN]:
-            covers_list = self.hass.data[DOMAIN].get("yaml_covers", [])
+        yaml_covers = self.hass.data.get(DOMAIN, {}).get("yaml_covers")
+        if yaml_covers is not None:
+            covers_list = yaml_covers
             _LOGGER.info("Importing %d cover(s) from YAML configuration", len(covers_list))
 
         return self.async_create_entry(
@@ -105,7 +106,7 @@ class JaroliftConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 CONF_REMOTE_ENTITY_ID: remote_entity_id,
                 CONF_MSB: msb,
                 CONF_LSB: lsb,
-                CONF_DELAY: jarolift_config.get(CONF_DELAY, 0),
+                CONF_DELAY: domain_config.get(CONF_DELAY, 0),
             },
             options={
                 CONF_COVERS: covers_list,

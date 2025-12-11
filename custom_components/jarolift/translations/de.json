@@ -2,7 +2,7 @@
   "services": {
     "send_raw": {
       "name": "Rohdaten senden",
-      "description": "Sende Rohdaten an JARO Lift",
+      "description": "Sende Rohdaten an JARO lift",
       "fields": {
         "packet": {
           "name": "Paket",
@@ -12,15 +12,15 @@
     },
     "send_command": {
       "name": "Befehl senden",
-      "description": "Sende Tastendruck an JARO Lift",
+      "description": "Sende Tastendruck an JARO lift",
       "fields": {
         "group": {
           "name": "Gruppe",
-          "description": "Die JARO Lift Gruppe, an die der Befehl gesendet werden soll"
+          "description": "Die JARO lift Gruppe, an die der Befehl gesendet werden soll"
         },
         "serial": {
           "name": "Seriennummer",
-          "description": "Die Seriennummer des adressierten JARO Lift"
+          "description": "Die Seriennummer des adressierten JARO lift"
         },
         "rep_count": {
           "name": "Wiederholungszähler",
@@ -38,29 +38,29 @@
     },
     "learn": {
       "name": "Anlernen",
-      "description": "Einen neuen JARO Lift anlernen",
+      "description": "Einen neuen JARO lift anlernen",
       "fields": {
         "group": {
           "name": "Gruppe",
-          "description": "Die JARO Lift Gruppe, an die der Befehl gesendet werden soll"
+          "description": "Die JARO lift Gruppe, an die der Befehl gesendet werden soll"
         },
         "serial": {
           "name": "Seriennummer",
-          "description": "Die Seriennummer des adressierten JARO Lift"
+          "description": "Die Seriennummer des adressierten JARO lift"
         }
       }
     },
     "clear": {
       "name": "Löschen",
-      "description": "Zuvor angelernten JARO Lift löschen",
+      "description": "Zuvor angelernten JARO lift löschen",
       "fields": {
         "group": {
           "name": "Gruppe",
-          "description": "Die JARO Lift Gruppe, an die der Befehl gesendet werden soll"
+          "description": "Die JARO lift Gruppe, an die der Befehl gesendet werden soll"
         },
         "serial": {
           "name": "Seriennummer",
-          "description": "Die Seriennummer des adressierten JARO Lift"
+          "description": "Die Seriennummer des adressierten JARO lift"
         }
       }
     }

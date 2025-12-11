@@ -2,16 +2,21 @@
 Support a 'Jarolift' remote as a separate remote.
 Basically a proxy adding Keeloq encryption to commands sent via another remote then.
 """
-import logging
 import base64
 import binascii
-from time import sleep
+import logging
 import os.path
 import threading
+from time import sleep
 
 DOMAIN = "jarolift"
 _LOGGER = logging.getLogger(__name__)
 mutex = threading.Lock()
+
+# Button codes for Jarolift commands
+BUTTON_LEARN = 0xA
+BUTTON_STOP = 0x4
+BUTTON_UP = 0x8
 
 def bitRead(value, bit):
     return ((value) >> (bit)) & 0x01
@@ -88,7 +93,7 @@ def BuildPacket(Grouping, Serial, Button, Counter, MSB, LSB, Hold):
                 codedstring = codedstring + "190c"
     codedstring = "190c1a0001e4310c0d0c0d0c0d0c0d0c0d0c0d0c0d0c0d7a" + codedstring
     slen = len(codedstring) / 2
-    if Hold == True:
+    if Hold:
         codedstring = "b214" + hex(int(slen))[2:] + "00" + codedstring
     else:
         codedstring = "b200" + hex(int(slen))[2:] + "00" + codedstring
@@ -102,7 +107,7 @@ def ReadCounter(counter_file, serial):
         #fo = open(filename, "r")
         #Counter = int(fo.readline())
         #fo.close()
-        with open(filename, "r", encoding="utf-8") as fo:
+        with open(filename, encoding="utf-8") as fo:
             Counter = int(fo.readline())
         return Counter
     else:
@@ -117,6 +122,33 @@ def WriteCounter(counter_file, serial, Counter):
     #fo.close()
     with open(filename, "w", encoding="utf-8") as fo:
         fo.write(str(Counter))
+
+
+def get_counter_value(counter_file, serial, call_data_counter):
+    """
+    Get the counter value to use for a command.
+    Returns the appropriate counter based on whether a specific counter was provided.
+    """
+    read_counter = ReadCounter(counter_file, serial)
+    provided_counter = int(call_data_counter, 16)
+    if provided_counter == 0:
+        return read_counter
+    else:
+        return provided_counter
+
+
+def parse_hex_param(call_data, param_name, default_value):
+    """Parse a hex parameter from call data."""
+    return int(call_data.get(param_name, default_value), 16)
+
+
+def send_remote_command(hass, remote_entity_id, packet):
+    """Send a command via the remote entity."""
+    hass.services.call(
+        "remote",
+        "send_command",
+        {"entity_id": remote_entity_id, "command": [packet]},
+    )
 
 
 def setup(hass, config):
@@ -134,21 +166,17 @@ def setup(hass, config):
     def handle_send_raw(call):
         with mutex:
             packet = call.data.get("packet", "")
-            hass.services.call(
-                "remote",
-                "send_command",
-                {"entity_id": remote_entity_id, "command": [packet]},
-            )
+            send_remote_command(hass, remote_entity_id, packet)
 
     def handle_send_command(call):
-        Grouping = int(call.data.get("group", "0x0001"), 16)
-        Serial = int(call.data.get("serial", "0x106aa01"), 16)
+        Grouping = parse_hex_param(call.data, "group", "0x0001")
+        Serial = parse_hex_param(call.data, "serial", "0x106aa01")
         rep_count = call.data.get("rep_count", 0)
         rep_delay = call.data.get("rep_delay", 0.2)
-        Button = int(call.data.get("button", "0x2"), 16)
+        Button = parse_hex_param(call.data, "button", "0x2")
         Hold = call.data.get("hold", False)
         RCounter = ReadCounter(counter_file, Serial)
-        Counter = int(call.data.get("counter", "0x0000"), 16)
+        Counter = parse_hex_param(call.data, "counter", "0x0000")
         if Counter == 0:
             packet = BuildPacket(Grouping, Serial, Button, RCounter, MSB, LSB, Hold)
             WriteCounter(counter_file, Serial, RCounter + 1)
@@ -161,11 +189,7 @@ def setup(hass, config):
             send_count = rep_count + 1
             for i in range( send_count ):
                 _LOGGER.debug(f"Sending: {Button} group: 0x{Grouping:04X} Serial: 0x{Serial:08X} repeat: {i}")
-                hass.services.call(
-                    "remote",
-                    "send_command",
-                    {"entity_id": remote_entity_id, "command": [packet]},
-                )
+                send_remote_command(hass, remote_entity_id, packet)
                 if i < send_count - 1:
                     # Only sleep when an additional command comes afterwards
                     sleep(rep_delay)
@@ -173,73 +197,42 @@ def setup(hass, config):
             sleep(DELAY)
 
     def handle_learn(call):
-        Grouping = int(call.data.get("group", "0x0001"), 16)
-        Serial = int(call.data.get("serial", "0x106aa01"), 16)
-        Button = int("0xa", 16)
-        RCounter = ReadCounter(counter_file, Serial)
-        Counter = int(call.data.get("counter", "0x0000"), 16)
-        if Counter == 0:
-            UsedCounter = RCounter
-        else:
-            UsedCounter = Counter
-        packet = BuildPacket(Grouping, Serial, Button, UsedCounter, MSB, LSB, False)
+        Grouping = parse_hex_param(call.data, "group", "0x0001")
+        Serial = parse_hex_param(call.data, "serial", "0x106aa01")
+        Counter = parse_hex_param(call.data, "counter", "0x0000")
+        UsedCounter = get_counter_value(counter_file, Serial, call.data.get("counter", "0x0000"))
+        packet = BuildPacket(Grouping, Serial, BUTTON_LEARN, UsedCounter, MSB, LSB, False)
 
         with mutex:
-            hass.services.call(
-                "remote",
-                "send_command",
-                {"entity_id": remote_entity_id, "command": [packet]},
-            )
+            send_remote_command(hass, remote_entity_id, packet)
             sleep(1)
-            Button = int("0x4", 16)
-            packet = BuildPacket(Grouping, Serial, Button, UsedCounter + 1, MSB, LSB, False)
-            hass.services.call(
-                "remote",
-                "send_command",
-                {"entity_id": remote_entity_id, "command": [packet]},
-            )
+            packet = BuildPacket(Grouping, Serial, BUTTON_STOP, UsedCounter + 1, MSB, LSB, False)
+            send_remote_command(hass, remote_entity_id, packet)
             if Counter == 0:
+                RCounter = ReadCounter(counter_file, Serial)
                 WriteCounter(counter_file, Serial, RCounter + 2)
 
     def handle_clear(call):
-        Grouping = int(call.data.get("group", "0x0001"), 16)
-        Serial = int(call.data.get("serial", "0x106aa01"), 16)
-        Button = int("0xa", 16)
-        RCounter = ReadCounter(counter_file, Serial)
-        Counter = int(call.data.get("counter", "0x0000"), 16)
-        if Counter == 0:
-            UsedCounter = RCounter
-        else:
-            UsedCounter = Counter
-        packet = BuildPacket(Grouping, Serial, Button, UsedCounter, MSB, LSB, False)
+        Grouping = parse_hex_param(call.data, "group", "0x0001")
+        Serial = parse_hex_param(call.data, "serial", "0x106aa01")
+        Counter = parse_hex_param(call.data, "counter", "0x0000")
+        UsedCounter = get_counter_value(counter_file, Serial, call.data.get("counter", "0x0000"))
+        packet = BuildPacket(Grouping, Serial, BUTTON_LEARN, UsedCounter, MSB, LSB, False)
 
         with mutex:
-            hass.services.call(
-                "remote",
-                "send_command",
-                {"entity_id": remote_entity_id, "command": [packet]},
-            )
+            send_remote_command(hass, remote_entity_id, packet)
             sleep(1)
-            Button = int("0x4", 16)
             for i in range(0, 6):
                 packet = BuildPacket(
-                    Grouping, Serial, Button, UsedCounter + 1 + i, MSB, LSB, False
+                    Grouping, Serial, BUTTON_STOP, UsedCounter + 1 + i, MSB, LSB, False
                 )
-                hass.services.call(
-                    "remote",
-                    "send_command",
-                    {"entity_id": remote_entity_id, "command": [packet]},
-                )
+                send_remote_command(hass, remote_entity_id, packet)
                 sleep(0.5)
             sleep(1)
-            Button = int("0x8", 16)
-            packet = BuildPacket(Grouping, Serial, Button, UsedCounter + 7, MSB, LSB, False)
-            hass.services.call(
-                "remote",
-                "send_command",
-                {"entity_id": remote_entity_id, "command": [packet]},
-            )
+            packet = BuildPacket(Grouping, Serial, BUTTON_UP, UsedCounter + 7, MSB, LSB, False)
+            send_remote_command(hass, remote_entity_id, packet)
             if Counter == 0:
+                RCounter = ReadCounter(counter_file, Serial)
                 WriteCounter(counter_file, Serial, RCounter + 8)
 
     hass.services.register(DOMAIN, "send_raw", handle_send_raw)

@@ -26,7 +26,8 @@
       "invalid_remote_entity": "Die angegebene Fernbedienungs-Entität existiert nicht"
     },
     "abort": {
-      "already_configured": "Jarolift ist bereits konfiguriert"
+      "already_configured": "Jarolift ist bereits konfiguriert",
+      "missing_configuration": "Erforderliche Konfigurationsschlüssel fehlen in der YAML"
     }
   },
   "options": {

@@ -214,10 +214,11 @@ def setup(hass, config):
     hass.async_create_task(schedule_import_after_covers_setup())
 
     # Legacy setup for backward compatibility
-    remote_entity_id = config[DOMAIN][CONF_REMOTE_ENTITY_ID]
-    MSB = _parse_hex_config_value(config[DOMAIN][CONF_MSB])
-    LSB = _parse_hex_config_value(config[DOMAIN][CONF_LSB])
-    DELAY = config[DOMAIN].get(CONF_DELAY, 0)
+    domain_config = config[DOMAIN]
+    remote_entity_id = domain_config[CONF_REMOTE_ENTITY_ID]
+    MSB = _parse_hex_config_value(domain_config[CONF_MSB])
+    LSB = _parse_hex_config_value(domain_config[CONF_LSB])
+    DELAY = domain_config.get(CONF_DELAY, 0)
     counter_file = hass.config.path("counter_")
 
     _register_services(hass, remote_entity_id, MSB, LSB, DELAY, counter_file)

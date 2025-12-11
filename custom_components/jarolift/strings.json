@@ -26,7 +26,8 @@
       "invalid_remote_entity": "The specified remote entity does not exist"
     },
     "abort": {
-      "already_configured": "Jarolift is already configured"
+      "already_configured": "Jarolift is already configured",
+      "missing_configuration": "Required configuration keys are missing from YAML"
     }
   },
   "options": {

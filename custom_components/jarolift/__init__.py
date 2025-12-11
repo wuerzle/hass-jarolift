@@ -9,14 +9,49 @@ import os.path
 import threading
 from time import sleep
 
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import Platform
+from homeassistant.core import HomeAssistant
+import homeassistant.helpers.config_validation as cv
+import voluptuous as vol
+
 DOMAIN = "jarolift"
 _LOGGER = logging.getLogger(__name__)
 mutex = threading.Lock()
+
+PLATFORMS = [Platform.COVER]
+
+# Configuration constants
+CONF_REMOTE_ENTITY_ID = "remote_entity_id"
+CONF_MSB = "MSB"
+CONF_LSB = "LSB"
+CONF_DELAY = "delay"
+CONF_COVERS = "covers"
+CONF_GROUP = "group"
+CONF_SERIAL = "serial"
+CONF_REP_COUNT = "repeat_count"
+CONF_REP_DELAY = "repeat_delay"
+CONF_REVERSE = "reverse"
 
 # Button codes for Jarolift commands
 BUTTON_LEARN = 0xA
 BUTTON_STOP = 0x4
 BUTTON_UP = 0x8
+
+# Configuration schema for YAML setup (backward compatibility)
+CONFIG_SCHEMA = vol.Schema(
+    {
+        DOMAIN: vol.Schema(
+            {
+                vol.Required(CONF_REMOTE_ENTITY_ID): cv.string,
+                vol.Required(CONF_MSB): cv.string,
+                vol.Required(CONF_LSB): cv.string,
+                vol.Optional(CONF_DELAY, default=0): vol.Coerce(int),
+            }
+        )
+    },
+    extra=vol.ALLOW_EXTRA,
+)
 
 def bitRead(value, bit):
     return ((value) >> (bit)) & 0x01
@@ -151,17 +186,104 @@ def send_remote_command(hass, remote_entity_id, packet):
     )
 
 
+def _parse_hex_config_value(value: str) -> int:
+    """Parse a hex configuration value to integer."""
+    return int(value, 16)
+
+
 def setup(hass, config):
-    remote_entity_id = config["jarolift"]["remote_entity_id"]
-    MSB = int(config["jarolift"]["MSB"], 16)
-    LSB = int(config["jarolift"]["LSB"], 16)
+    """Set up the Jarolift integration from YAML (backward compatibility)."""
+    if DOMAIN not in config:
+        return True
 
-    if "delay" in config["jarolift"]:
-        DELAY = config["jarolift"]["delay"]
-    else:
-        DELAY = 0
+    # Store YAML config temporarily for migration
+    hass.data.setdefault(DOMAIN, {})
+    hass.data[DOMAIN]["yaml_config"] = config
+    hass.data[DOMAIN]["yaml_covers"] = []  # Will be populated by setup_platform
 
+    # Trigger import flow for migration (delayed to allow covers to be registered)
+    async def schedule_import_after_covers_setup():
+        """Trigger import after a delay to allow cover platform setup."""
+        await hass.async_block_till_done()
+        await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={"source": "import"},
+            data=config,
+        )
+
+    hass.async_create_task(schedule_import_after_covers_setup())
+
+    # Legacy setup for backward compatibility
+    domain_config = config[DOMAIN]
+    remote_entity_id = domain_config[CONF_REMOTE_ENTITY_ID]
+    MSB = _parse_hex_config_value(domain_config[CONF_MSB])
+    LSB = _parse_hex_config_value(domain_config[CONF_LSB])
+    DELAY = domain_config.get(CONF_DELAY, 0)
     counter_file = hass.config.path("counter_")
+
+    _register_services(hass, remote_entity_id, MSB, LSB, DELAY, counter_file)
+
+    return True
+
+
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Set up Jarolift from a config entry."""
+    hass.data.setdefault(DOMAIN, {})
+    
+    # Convert hex strings to integers
+    msb_value = _parse_hex_config_value(entry.data[CONF_MSB])
+    lsb_value = _parse_hex_config_value(entry.data[CONF_LSB])
+    
+    # Store the config entry data
+    hass.data[DOMAIN][entry.entry_id] = {
+        CONF_REMOTE_ENTITY_ID: entry.data[CONF_REMOTE_ENTITY_ID],
+        CONF_MSB: msb_value,
+        CONF_LSB: lsb_value,
+        CONF_DELAY: entry.data.get(CONF_DELAY, 0),
+        CONF_COVERS: entry.options.get(CONF_COVERS, []),
+    }
+
+    # Set up services
+    counter_file = hass.config.path("counter_")
+    _register_services(
+        hass,
+        entry.data[CONF_REMOTE_ENTITY_ID],
+        msb_value,
+        lsb_value,
+        entry.data.get(CONF_DELAY, 0),
+        counter_file,
+    )
+
+    # Forward the setup to the cover platform
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
+    # Register update listener
+    entry.async_on_unload(entry.add_update_listener(async_reload_entry))
+
+    return True
+
+
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Unload a config entry."""
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+
+    if unload_ok:
+        hass.data[DOMAIN].pop(entry.entry_id)
+
+    return unload_ok
+
+
+async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Reload config entry."""
+    await async_unload_entry(hass, entry)
+    await async_setup_entry(hass, entry)
+
+
+def _register_services(hass, remote_entity_id, MSB, LSB, DELAY, counter_file):
+    """Register Jarolift services."""
+    # Only register services once
+    if hass.services.has_service(DOMAIN, "send_raw"):
+        return
 
     def handle_send_raw(call):
         with mutex:

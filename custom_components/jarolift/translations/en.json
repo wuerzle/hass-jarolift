@@ -1,0 +1,76 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Jarolift",
+        "description": "Set up Jarolift integration"
+      }
+    }
+  },
+  "services": {
+    "send_raw": {
+      "name": "Send raw",
+      "description": "Send raw data to JARO lift",
+      "fields": {
+        "packet": {
+          "name": "Packet",
+          "description": "The packet data to send"
+        }
+      }
+    },
+    "send_command": {
+      "name": "Send command",
+      "description": "Send button press to JARO lift",
+      "fields": {
+        "group": {
+          "name": "Group",
+          "description": "The JARO lift group to send the command to"
+        },
+        "serial": {
+          "name": "Serial",
+          "description": "The serial of the addressed JARO lift"
+        },
+        "rep_count": {
+          "name": "Repeat count",
+          "description": "Number of times that the transmission is repeated without increasing counter"
+        },
+        "rep_delay": {
+          "name": "Repeat delay",
+          "description": "Delay in seconds between each transmission"
+        },
+        "button": {
+          "name": "Button",
+          "description": "The button that was pressed on the remote"
+        }
+      }
+    },
+    "learn": {
+      "name": "Learn",
+      "description": "Learn a new JARO lift",
+      "fields": {
+        "group": {
+          "name": "Group",
+          "description": "The JARO lift group to send the command to"
+        },
+        "serial": {
+          "name": "Serial",
+          "description": "The serial of the addressed JARO lift"
+        }
+      }
+    },
+    "clear": {
+      "name": "Clear",
+      "description": "Clear previously learned JARO lift",
+      "fields": {
+        "group": {
+          "name": "Group",
+          "description": "The JARO lift group to send the command to"
+        },
+        "serial": {
+          "name": "Serial",
+          "description": "The serial of the addressed JARO lift"
+        }
+      }
+    }
+  }
+}

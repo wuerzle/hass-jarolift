@@ -1,0 +1,68 @@
+{
+  "services": {
+    "send_raw": {
+      "name": "Rohdaten senden",
+      "description": "Sende Rohdaten an JARO Lift",
+      "fields": {
+        "packet": {
+          "name": "Paket",
+          "description": "Die zu sendenden Paketdaten"
+        }
+      }
+    },
+    "send_command": {
+      "name": "Befehl senden",
+      "description": "Sende Tastendruck an JARO Lift",
+      "fields": {
+        "group": {
+          "name": "Gruppe",
+          "description": "Die JARO Lift Gruppe, an die der Befehl gesendet werden soll"
+        },
+        "serial": {
+          "name": "Seriennummer",
+          "description": "Die Seriennummer des adressierten JARO Lift"
+        },
+        "rep_count": {
+          "name": "Wiederholungszähler",
+          "description": "Anzahl der Übertragungswiederholungen ohne Erhöhung des Zählers"
+        },
+        "rep_delay": {
+          "name": "Wiederholungsverzögerung",
+          "description": "Verzögerung in Sekunden zwischen den einzelnen Übertragungen"
+        },
+        "button": {
+          "name": "Taste",
+          "description": "Die Taste, die auf der Fernbedienung gedrückt wurde"
+        }
+      }
+    },
+    "learn": {
+      "name": "Anlernen",
+      "description": "Einen neuen JARO Lift anlernen",
+      "fields": {
+        "group": {
+          "name": "Gruppe",
+          "description": "Die JARO Lift Gruppe, an die der Befehl gesendet werden soll"
+        },
+        "serial": {
+          "name": "Seriennummer",
+          "description": "Die Seriennummer des adressierten JARO Lift"
+        }
+      }
+    },
+    "clear": {
+      "name": "Löschen",
+      "description": "Zuvor angelernten JARO Lift löschen",
+      "fields": {
+        "group": {
+          "name": "Gruppe",
+          "description": "Die JARO Lift Gruppe, an die der Befehl gesendet werden soll"
+        },
+        "serial": {
+          "name": "Seriennummer",
+          "description": "Die Seriennummer des adressierten JARO Lift"
+        }
+      }
+    }
+  }
+}

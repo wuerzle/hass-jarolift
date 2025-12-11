@@ -1,12 +1,4 @@
 {
-  "config": {
-    "step": {
-      "user": {
-        "title": "Jarolift",
-        "description": "Set up Jarolift integration"
-      }
-    }
-  },
   "services": {
     "send_raw": {
       "name": "Send raw",

@@ -62,15 +62,18 @@ CONFIG_SCHEMA = vol.Schema(
 )
 
 
-def bitRead(value, bit):
+def bitRead(value: int, bit: int) -> int:
+    """Read a specific bit from a value."""
     return ((value) >> (bit)) & 0x01
 
 
-def bitSet(value, bit):
+def bitSet(value: int, bit: int) -> int:
+    """Set a specific bit in a value."""
     return (value) | (1 << (bit))
 
 
-def encrypt(x, keyHigh, keyLow):
+def encrypt(x: int, keyHigh: int, keyLow: int) -> int:
+    """Encrypt a value using KeeLoq algorithm."""
     KeeLoq_NLF = 0x3A5C742E
     for r in range(0, 528):
         keyBitNo = r & 63
@@ -90,7 +93,8 @@ def encrypt(x, keyHigh, keyLow):
     return x
 
 
-def decrypt(x, keyHigh, keyLow):
+def decrypt(x: int, keyHigh: int, keyLow: int) -> int:
+    """Decrypt a value using KeeLoq algorithm."""
     KeeLoq_NLF = 0x3A5C742E
     for r in range(0, 528):
         keyBitNo = (15 - r) & 63
@@ -112,7 +116,16 @@ def decrypt(x, keyHigh, keyLow):
     return x
 
 
-def BuildPacket(Grouping, Serial, Button, Counter, MSB, LSB, Hold):
+def BuildPacket(
+    Grouping: int,
+    Serial: int,
+    Button: int,
+    Counter: int,
+    MSB: int,
+    LSB: int,
+    Hold: bool,
+) -> str:
+    """Build a KeeLoq encrypted packet for transmission."""
     keylow = Serial | 0x20000000
     keyhigh = Serial | 0x60000000
     KeyLSB = decrypt(keylow, MSB, LSB)
@@ -145,7 +158,8 @@ def BuildPacket(Grouping, Serial, Button, Counter, MSB, LSB, Hold):
     return "b64:" + packet.decode("utf-8")
 
 
-def ReadCounter(counter_file, serial):
+def ReadCounter(counter_file: str, serial: int) -> int:
+    """Read the counter value for a serial from file."""
     filename = counter_file + hex(serial) + ".txt"
     if os.path.isfile(filename):
         # fo = open(filename, "r")
@@ -158,7 +172,8 @@ def ReadCounter(counter_file, serial):
         return 0
 
 
-def WriteCounter(counter_file, serial, Counter):
+def WriteCounter(counter_file: str, serial: int, Counter: int) -> None:
+    """Write the counter value for a serial to file."""
     filename = counter_file + hex(serial) + ".txt"
     # _LOGGER.warning("Writing to " + filename + ": " + str(Counter) )
     # fo = open(filename, "w")
@@ -168,7 +183,7 @@ def WriteCounter(counter_file, serial, Counter):
         fo.write(str(Counter))
 
 
-def get_counter_value(counter_file, serial, call_data_counter):
+def get_counter_value(counter_file: str, serial: int, call_data_counter: str) -> int:
     """
     Get the counter value to use for a command.
     Returns the appropriate counter based on whether a specific counter was provided.
@@ -181,12 +196,14 @@ def get_counter_value(counter_file, serial, call_data_counter):
         return provided_counter
 
 
-def parse_hex_param(call_data, param_name, default_value):
+def parse_hex_param(call_data: dict, param_name: str, default_value: str) -> int:
     """Parse a hex parameter from call data."""
     return int(call_data.get(param_name, default_value), 16)
 
 
-def send_remote_command(hass, remote_entity_id, packet):
+def send_remote_command(
+    hass: HomeAssistant, remote_entity_id: str, packet: str
+) -> None:
     """Send a command via the remote entity."""
     hass.services.call(
         "remote",
@@ -205,7 +222,7 @@ def _has_config_entry(hass) -> bool:
     return bool(hass.config_entries.async_entries(DOMAIN))
 
 
-def setup(hass, config):
+def setup(hass: HomeAssistant, config: dict) -> bool:
     """Set up the Jarolift integration from YAML (backward compatibility)."""
     if DOMAIN not in config:
         return True
@@ -314,7 +331,14 @@ async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     await async_setup_entry(hass, entry)
 
 
-async def _register_services(hass, remote_entity_id, MSB, LSB, DELAY, counter_file):
+async def _register_services(
+    hass: HomeAssistant,
+    remote_entity_id: str,
+    MSB: int,
+    LSB: int,
+    DELAY: int,
+    counter_file: str,
+) -> bool:
     """Register Jarolift services."""
     # Only register services once
     if hass.services.has_service(DOMAIN, "send_raw"):

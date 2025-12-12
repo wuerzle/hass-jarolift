@@ -173,32 +173,32 @@ class JaroliftCover(CoverEntity):
             )
 
     @property
-    def serial(self):
+    def serial(self) -> str:
         """Return the serial of this cover."""
         return self._serial
 
     @property
-    def name(self):
+    def name(self) -> str:
         """Return the name of the cover if any."""
         return self._name
 
     @property
-    def group(self):
+    def group(self) -> str:
         """Return the name of the group if any."""
         return self._group
 
     @property
-    def should_poll(self):
+    def should_poll(self) -> bool:
         """No polling available in Jarolift cover."""
         return False
 
     @property
-    def is_closed(self):
+    def is_closed(self) -> bool | None:
         """Return true if cover is closed, None if unknown."""
         return None
 
     @property
-    def current_cover_position(self):
+    def current_cover_position(self) -> int | None:
         """Return the current position of the cover.
         None is unknown, 0 is closed, 100 is fully open.
         """
@@ -225,7 +225,8 @@ class JaroliftCover(CoverEntity):
         _LOGGER.debug("stopping cover")
         await self.async_push_button(type(self).code_stop)
 
-    async def async_push_button(self, value):
+    async def async_push_button(self, value: str) -> None:
+        """Push a button on the Jarolift cover."""
         await self._hass.services.async_call(
             "jarolift",
             "send_command",

@@ -15,6 +15,7 @@ import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import device_registry as dr
 
 DOMAIN = "jarolift"
 _LOGGER = logging.getLogger(__name__)
@@ -250,6 +251,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Convert hex strings to integers
     msb_value = _parse_hex_config_value(entry.data[CONF_MSB])
     lsb_value = _parse_hex_config_value(entry.data[CONF_LSB])
+
+    # Register the hub device
+    device_registry = dr.async_get(hass)
+    device_registry.async_get_or_create(
+        config_entry_id=entry.entry_id,
+        identifiers={(DOMAIN, entry.entry_id)},
+        name="Jarolift",
+        manufacturer="Jarolift",
+        model="KeeLoq RF Controller",
+        sw_version="2.0.1",
+    )
 
     # Store the config entry data
     hass.data[DOMAIN][entry.entry_id] = {

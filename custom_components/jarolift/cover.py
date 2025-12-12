@@ -15,6 +15,7 @@ from homeassistant.components.cover import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_NAME
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import (
@@ -124,6 +125,7 @@ async def async_setup_entry(
                 cover.get(CONF_REP_DELAY, 0.2),
                 cover.get(CONF_REVERSE, False),
                 hass,
+                config_entry.entry_id,
             )
         )
     async_add_entities(covers)
@@ -136,7 +138,7 @@ class JaroliftCover(CoverEntity):
     code_stop = "0x4"
     code_up = "0x8"
 
-    def __init__(self, name, group, serial, rep_count, rep_delay, reversed, hass):
+    def __init__(self, name, group, serial, rep_count, rep_delay, reversed, hass, entry_id=None):
         """Initialize the jarolift device."""
         self._name = name
         self._group = group
@@ -145,6 +147,7 @@ class JaroliftCover(CoverEntity):
         self._rep_delay = rep_delay
         self._reversed = reversed
         self._hass = hass
+        self._entry_id = entry_id
         supported_features = 0
         supported_features |= CoverEntityFeature.OPEN
         supported_features |= CoverEntityFeature.CLOSE
@@ -152,6 +155,16 @@ class JaroliftCover(CoverEntity):
         self._attr_supported_features = supported_features
         self._attr_device_class = CoverDeviceClass.BLIND
         self._attr_unique_id = f"jarolift_{serial}_{group}"
+        
+        # Add device info if we have an entry_id (config entry mode)
+        if entry_id:
+            self._attr_device_info = DeviceInfo(
+                identifiers={(DOMAIN, entry_id)},
+                name="Jarolift",
+                manufacturer="Jarolift",
+                model="KeeLoq RF Controller",
+                sw_version="2.0.1",
+            )
 
     @property
     def serial(self):

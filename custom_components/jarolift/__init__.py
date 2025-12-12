@@ -2,6 +2,7 @@
 Support a 'Jarolift' remote as a separate remote.
 Basically a proxy adding Keeloq encryption to commands sent via another remote then.
 """
+
 import base64
 import binascii
 import logging
@@ -9,11 +10,11 @@ import os.path
 import threading
 from time import sleep
 
+import homeassistant.helpers.config_validation as cv
+import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
-import homeassistant.helpers.config_validation as cv
-import voluptuous as vol
 
 DOMAIN = "jarolift"
 _LOGGER = logging.getLogger(__name__)
@@ -52,6 +53,7 @@ CONFIG_SCHEMA = vol.Schema(
     },
     extra=vol.ALLOW_EXTRA,
 )
+
 
 def bitRead(value, bit):
     return ((value) >> (bit)) & 0x01
@@ -139,9 +141,9 @@ def BuildPacket(Grouping, Serial, Button, Counter, MSB, LSB, Hold):
 def ReadCounter(counter_file, serial):
     filename = counter_file + hex(serial) + ".txt"
     if os.path.isfile(filename):
-        #fo = open(filename, "r")
-        #Counter = int(fo.readline())
-        #fo.close()
+        # fo = open(filename, "r")
+        # Counter = int(fo.readline())
+        # fo.close()
         with open(filename, encoding="utf-8") as fo:
             Counter = int(fo.readline())
         return Counter
@@ -151,10 +153,10 @@ def ReadCounter(counter_file, serial):
 
 def WriteCounter(counter_file, serial, Counter):
     filename = counter_file + hex(serial) + ".txt"
-    #_LOGGER.warning("Writing to " + filename + ": " + str(Counter) )
-    #fo = open(filename, "w")
-    #fo.write(str(Counter))
-    #fo.close()
+    # _LOGGER.warning("Writing to " + filename + ": " + str(Counter) )
+    # fo = open(filename, "w")
+    # fo.write(str(Counter))
+    # fo.close()
     with open(filename, "w", encoding="utf-8") as fo:
         fo.write(str(Counter))
 
@@ -229,11 +231,11 @@ def setup(hass, config):
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Jarolift from a config entry."""
     hass.data.setdefault(DOMAIN, {})
-    
+
     # Convert hex strings to integers
     msb_value = _parse_hex_config_value(entry.data[CONF_MSB])
     lsb_value = _parse_hex_config_value(entry.data[CONF_LSB])
-    
+
     # Store the config entry data
     hass.data[DOMAIN][entry.entry_id] = {
         CONF_REMOTE_ENTITY_ID: entry.data[CONF_REMOTE_ENTITY_ID],
@@ -297,24 +299,44 @@ def _register_services(hass, remote_entity_id, MSB, LSB, DELAY, counter_file):
         rep_delay = call.data.get("rep_delay", 0.2)
         Button = parse_hex_param(call.data, "button", "0x2")
         Hold = call.data.get("hold", False)
-        RCounter = ReadCounter(counter_file, Serial)
         Counter = parse_hex_param(call.data, "counter", "0x0000")
-        if Counter == 0:
-            packet = BuildPacket(Grouping, Serial, Button, RCounter, MSB, LSB, Hold)
-            WriteCounter(counter_file, Serial, RCounter + 1)
-        else:
-            packet = BuildPacket(Grouping, Serial, Button, Counter, MSB, LSB, Hold)
 
         # Mutex used so that only one cover will be set when having rep_count > 0
         with mutex:
             # We want to send at least once. so rep_count 0 means range(1)
             send_count = rep_count + 1
-            for i in range( send_count ):
-                _LOGGER.debug(f"Sending: {Button} group: 0x{Grouping:04X} Serial: 0x{Serial:08X} repeat: {i}")
-                send_remote_command(hass, remote_entity_id, packet)
-                if i < send_count - 1:
-                    # Only sleep when an additional command comes afterwards
-                    sleep(rep_delay)
+
+            if Counter == 0:
+                # Use and increment the stored counter
+                RCounter = ReadCounter(counter_file, Serial)
+                for i in range(send_count):
+                    # Build packet with incrementing counter for each transmission
+                    packet = BuildPacket(
+                        Grouping, Serial, Button, RCounter + i, MSB, LSB, Hold
+                    )
+                    _LOGGER.debug(
+                        f"Sending: {Button} group: 0x{Grouping:04X} Serial: 0x{Serial:08X} counter: {RCounter + i} repeat: {i}"
+                    )
+                    send_remote_command(hass, remote_entity_id, packet)
+                    if i < send_count - 1:
+                        # Only sleep when an additional command comes afterwards
+                        sleep(rep_delay)
+                # Increment counter by the number of packets sent
+                WriteCounter(counter_file, Serial, RCounter + send_count)
+            else:
+                # User provided explicit counter, send same packet multiple times
+                for i in range(send_count):
+                    packet = BuildPacket(
+                        Grouping, Serial, Button, Counter, MSB, LSB, Hold
+                    )
+                    _LOGGER.debug(
+                        f"Sending: {Button} group: 0x{Grouping:04X} Serial: 0x{Serial:08X} counter: {Counter} repeat: {i}"
+                    )
+                    send_remote_command(hass, remote_entity_id, packet)
+                    if i < send_count - 1:
+                        # Only sleep when an additional command comes afterwards
+                        sleep(rep_delay)
+
             # This is the minimum delay between multiple different covers
             sleep(DELAY)
 
@@ -322,13 +344,19 @@ def _register_services(hass, remote_entity_id, MSB, LSB, DELAY, counter_file):
         Grouping = parse_hex_param(call.data, "group", "0x0001")
         Serial = parse_hex_param(call.data, "serial", "0x106aa01")
         Counter = parse_hex_param(call.data, "counter", "0x0000")
-        UsedCounter = get_counter_value(counter_file, Serial, call.data.get("counter", "0x0000"))
-        packet = BuildPacket(Grouping, Serial, BUTTON_LEARN, UsedCounter, MSB, LSB, False)
+        UsedCounter = get_counter_value(
+            counter_file, Serial, call.data.get("counter", "0x0000")
+        )
+        packet = BuildPacket(
+            Grouping, Serial, BUTTON_LEARN, UsedCounter, MSB, LSB, False
+        )
 
         with mutex:
             send_remote_command(hass, remote_entity_id, packet)
             sleep(1)
-            packet = BuildPacket(Grouping, Serial, BUTTON_STOP, UsedCounter + 1, MSB, LSB, False)
+            packet = BuildPacket(
+                Grouping, Serial, BUTTON_STOP, UsedCounter + 1, MSB, LSB, False
+            )
             send_remote_command(hass, remote_entity_id, packet)
             if Counter == 0:
                 RCounter = ReadCounter(counter_file, Serial)
@@ -338,8 +366,12 @@ def _register_services(hass, remote_entity_id, MSB, LSB, DELAY, counter_file):
         Grouping = parse_hex_param(call.data, "group", "0x0001")
         Serial = parse_hex_param(call.data, "serial", "0x106aa01")
         Counter = parse_hex_param(call.data, "counter", "0x0000")
-        UsedCounter = get_counter_value(counter_file, Serial, call.data.get("counter", "0x0000"))
-        packet = BuildPacket(Grouping, Serial, BUTTON_LEARN, UsedCounter, MSB, LSB, False)
+        UsedCounter = get_counter_value(
+            counter_file, Serial, call.data.get("counter", "0x0000")
+        )
+        packet = BuildPacket(
+            Grouping, Serial, BUTTON_LEARN, UsedCounter, MSB, LSB, False
+        )
 
         with mutex:
             send_remote_command(hass, remote_entity_id, packet)
@@ -351,7 +383,9 @@ def _register_services(hass, remote_entity_id, MSB, LSB, DELAY, counter_file):
                 send_remote_command(hass, remote_entity_id, packet)
                 sleep(0.5)
             sleep(1)
-            packet = BuildPacket(Grouping, Serial, BUTTON_UP, UsedCounter + 7, MSB, LSB, False)
+            packet = BuildPacket(
+                Grouping, Serial, BUTTON_UP, UsedCounter + 7, MSB, LSB, False
+            )
             send_remote_command(hass, remote_entity_id, packet)
             if Counter == 0:
                 RCounter = ReadCounter(counter_file, Serial)

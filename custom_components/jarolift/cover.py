@@ -4,6 +4,8 @@ Support for Jarolift cover
 
 import logging
 
+import homeassistant.helpers.config_validation as cv
+import voluptuous as vol
 from homeassistant.components.cover import (
     PLATFORM_SCHEMA,
     CoverDeviceClass,
@@ -14,8 +16,6 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_NAME
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-import homeassistant.helpers.config_validation as cv
-import voluptuous as vol
 
 from . import (
     CONF_COVERS,
@@ -56,12 +56,13 @@ _LOGGER = logging.getLogger(__name__)
 
 def setup_platform(hass, config, add_devices, discovery_info=None):
     """Set up the Jarolift covers from YAML (backward compatibility)."""
-    covers = []
     covers_conf = config.get(CONF_COVERS)
 
     # Store cover configs for migration if YAML import is pending
     yaml_covers = hass.data.get(DOMAIN, {}).get("yaml_covers")
     if yaml_covers is not None:
+        # YAML import is pending - store configs but don't create entities
+        # The entities will be created by async_setup_entry after import
         for cover in covers_conf:
             yaml_covers.append(
                 {
@@ -73,7 +74,13 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
                     CONF_REVERSE: cover.get(CONF_REVERSE, False),
                 }
             )
+        _LOGGER.info(
+            "YAML config stored for import, entities will be created via config entry"
+        )
+        return
 
+    # No import pending - create entities directly (pure YAML mode)
+    covers = []
     for cover in covers_conf:
         covers.append(
             JaroliftCover(

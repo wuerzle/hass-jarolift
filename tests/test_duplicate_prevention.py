@@ -1,7 +1,6 @@
 """Tests for duplicate entity prevention after YAML migration."""
-import pytest
+
 from homeassistant import config_entries
-from homeassistant.setup import async_setup_component
 
 from custom_components.jarolift import (
     CONF_DELAY,
@@ -9,7 +8,9 @@ from custom_components.jarolift import (
     CONF_MSB,
     CONF_REMOTE_ENTITY_ID,
     DOMAIN,
+    setup,
 )
+from custom_components.jarolift.cover import setup_platform
 
 
 async def test_yaml_setup_skipped_when_config_entry_exists(hass, mock_remote_entity):
@@ -45,21 +46,20 @@ async def test_yaml_setup_skipped_when_config_entry_exists(hass, mock_remote_ent
         }
     }
 
-    # Import the setup function
-    from custom_components.jarolift import setup
-
     # Call setup with YAML config
     result = setup(hass, yaml_config)
-    
+
     # Setup should return True but skip creating duplicate entities
     assert result is True
-    
+
     # Verify that only one config entry exists
     entries = hass.config_entries.async_entries(DOMAIN)
     assert len(entries) == 1
 
 
-async def test_cover_platform_skipped_when_config_entry_exists(hass, mock_remote_entity):
+async def test_cover_platform_skipped_when_config_entry_exists(
+    hass, mock_remote_entity
+):
     """Test that cover platform setup is skipped when a config entry exists."""
     # Create a config entry first
     entry = config_entries.ConfigEntry(
@@ -83,8 +83,6 @@ async def test_cover_platform_skipped_when_config_entry_exists(hass, mock_remote
     hass.states.async_set(mock_remote_entity, "idle")
 
     # Try to set up cover platform via YAML
-    from custom_components.jarolift.cover import setup_platform
-
     cover_config = {
         "covers": [
             {
@@ -106,6 +104,6 @@ async def test_cover_platform_skipped_when_config_entry_exists(hass, mock_remote
 
     # Call setup_platform
     setup_platform(hass, cover_config, mock_add_devices)
-    
+
     # No devices should be added because config entry exists
     assert len(added_devices) == 0

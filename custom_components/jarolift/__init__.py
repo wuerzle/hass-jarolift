@@ -193,13 +193,18 @@ def _parse_hex_config_value(value: str) -> int:
     return int(value, 16)
 
 
+def _has_config_entry(hass) -> bool:
+    """Check if integration is already configured via config entry (UI)."""
+    return bool(hass.config_entries.async_entries(DOMAIN))
+
+
 def setup(hass, config):
     """Set up the Jarolift integration from YAML (backward compatibility)."""
     if DOMAIN not in config:
         return True
 
     # Check if already configured via config entry (migration already done)
-    if hass.config_entries.async_entries(DOMAIN):
+    if _has_config_entry(hass):
         _LOGGER.info(
             "Jarolift is already configured via UI. YAML configuration is ignored. "
             "Please remove jarolift from configuration.yaml."

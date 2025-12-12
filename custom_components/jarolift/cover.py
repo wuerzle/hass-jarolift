@@ -25,6 +25,7 @@ from . import (
     CONF_REVERSE,
     CONF_SERIAL,
     DOMAIN,
+    _has_config_entry,
 )
 
 _COVERS_SCHEMA = vol.All(
@@ -57,7 +58,7 @@ _LOGGER = logging.getLogger(__name__)
 def setup_platform(hass, config, add_devices, discovery_info=None):
     """Set up the Jarolift covers from YAML (backward compatibility)."""
     # Check if already configured via config entry (migration already done)
-    if hass.config_entries.async_entries(DOMAIN):
+    if _has_config_entry(hass):
         _LOGGER.info(
             "Jarolift covers are managed via UI. YAML cover configuration is ignored."
         )

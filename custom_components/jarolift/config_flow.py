@@ -144,7 +144,7 @@ class JaroliftOptionsFlow(config_entries.OptionsFlow):
 
     def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
         """Initialize options flow."""
-        self.config_entry = config_entry
+        super().__init__(config_entry)
         self.covers = dict(config_entry.options).get(CONF_COVERS, [])
         self.edit_cover_index = None
 

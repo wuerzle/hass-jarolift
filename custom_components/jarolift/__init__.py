@@ -35,6 +35,12 @@ CONF_REP_COUNT = "repeat_count"
 CONF_REP_DELAY = "repeat_delay"
 CONF_REVERSE = "reverse"
 
+# Device information constants
+DEVICE_NAME = "Jarolift"
+DEVICE_MANUFACTURER = "Jarolift"
+DEVICE_MODEL = "KeeLoq RF Controller"
+DEVICE_SW_VERSION = "2.0.1"
+
 # Button codes for Jarolift commands
 BUTTON_LEARN = 0xA
 BUTTON_STOP = 0x4
@@ -257,10 +263,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     device_registry.async_get_or_create(
         config_entry_id=entry.entry_id,
         identifiers={(DOMAIN, entry.entry_id)},
-        name="Jarolift",
-        manufacturer="Jarolift",
-        model="KeeLoq RF Controller",
-        sw_version="2.0.1",
+        name=DEVICE_NAME,
+        manufacturer=DEVICE_MANUFACTURER,
+        model=DEVICE_MODEL,
+        sw_version=DEVICE_SW_VERSION,
     )
 
     # Store the config entry data

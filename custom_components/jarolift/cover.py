@@ -25,6 +25,10 @@ from . import (
     CONF_REP_DELAY,
     CONF_REVERSE,
     CONF_SERIAL,
+    DEVICE_MANUFACTURER,
+    DEVICE_MODEL,
+    DEVICE_NAME,
+    DEVICE_SW_VERSION,
     DOMAIN,
     _has_config_entry,
 )
@@ -160,10 +164,10 @@ class JaroliftCover(CoverEntity):
         if entry_id:
             self._attr_device_info = DeviceInfo(
                 identifiers={(DOMAIN, entry_id)},
-                name="Jarolift",
-                manufacturer="Jarolift",
-                model="KeeLoq RF Controller",
-                sw_version="2.0.1",
+                name=DEVICE_NAME,
+                manufacturer=DEVICE_MANUFACTURER,
+                model=DEVICE_MODEL,
+                sw_version=DEVICE_SW_VERSION,
             )
 
     @property

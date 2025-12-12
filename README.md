@@ -1,14 +1,19 @@
-# (Unofficial) Jarolift Integration for Home Assistant
+# Jarolift Integration for Home Assistant
 
-Jarolift covers can be controlled by remote control. This repository contains a
-home assistant custom component which allows to control Jarolift covers (by adding a 'jarolift' cover platform).
-The remote control codes are send via a home assistant 'remote' which does the
-heavy load of transmitting the bytes via RF to the covers.
+Control your Jarolift covers (motorized blinds/shutters) through Home Assistant. This custom component acts as a proxy that adds KeeLoq encryption to commands sent via a Home Assistant 'remote' entity (typically a Broadlink RM Pro+ or similar RF transmitter).
 
-The code originates from [here](https://community.home-assistant.io/t/control-of-jarolift-covers-using-broadlink-rm-pro/35600)
-but Wladi seems not in the position to support further more. Since there were some
-changes needed to the code (and will always be as home assistant evolves) this repository
-was set up to track changes.
+## Features
+
+- **UI Configuration**: Configure via Home Assistant UI (Settings → Devices & Services)
+- **YAML Support**: Legacy YAML configuration with automatic migration to UI
+- **Multiple Covers**: Control individual covers or groups of covers
+- **KeeLoq Security**: Built-in KeeLoq encryption for secure communication
+- **Repeat Transmission**: Configurable repeat count for improved RF reliability
+- **Learning Mode**: Learn new covers directly through Home Assistant services
+
+## Credits
+
+The code originates from [this Home Assistant Community discussion](https://community.home-assistant.io/t/control-of-jarolift-covers-using-broadlink-rm-pro/35600). This repository maintains and updates the integration for compatibility with newer Home Assistant versions.
 
 ## Supported Home Assistant versions
 
@@ -117,6 +122,73 @@ Those are documented in the [services.yaml](https://github.com/wuerzle/hass-jaro
 Use the provided services from your Home Assistant Developers Tools view to connect to your covers. Use the process that is normally executed when
 learning an original Jarolift remote.
 
-## Support
-I can't promise to give any support since the code does not originate from me and I'm only using it in terms of "I once configured it and it works and now
-I'm only trying to keep it working with newer versions of Home Assistant".
+## Understanding Groups and Controlling Multiple Covers
+
+### How Groups Work
+
+Groups in Jarolift use bit flags to determine which covers respond to a command. Each cover can be configured with one or more group bits:
+
+- `0x0001` - Group 1 (bit 0)
+- `0x0002` - Group 2 (bit 1)
+- `0x0004` - Group 3 (bit 2)
+- `0x0008` - Group 4 (bit 3)
+- etc.
+
+### Controlling All Covers
+
+To control multiple covers simultaneously, you have two options:
+
+#### Option 1: Use Combined Group Bits (Recommended)
+
+Use the bitwise OR of all individual group values. For example, if you have covers with groups `0x0001`, `0x0002`, `0x0004`, and `0x0008`, use:
+
+```yaml
+- name: 'All Covers'
+  group: '0x000F'  # 0x0001 | 0x0002 | 0x0004 | 0x0008 = 0x000F
+  serial: '0x106aa01'  # Use any valid serial, typically same as one of your covers
+```
+
+#### Option 2: Use Broadcast Group (Not Always Supported)
+
+Some Jarolift covers may respond to `0xFFFF` as a broadcast group, but this is not guaranteed:
+
+```yaml
+- name: 'All Covers'
+  group: '0xFFFF'  # Broadcast to all groups
+  serial: '0x106aa01'  # Use any valid serial
+```
+
+### Important Notes
+
+1. **Serial Number**: When controlling multiple covers, use the serial number of one of your existing covers. The serial determines which counter file is used for KeeLoq encryption.
+
+2. **Learning Required**: Each cover must be learned with its specific group value. Covers only respond to commands that match their learned group bits.
+
+3. **Counter Synchronization**: All covers sharing the same serial number share the same counter file. If you use `repeat_count > 0`, make sure the value is appropriate for RF reliability in your environment.
+
+4. **Example Configuration**:
+   ```yaml
+   cover:
+     - platform: jarolift
+       covers:
+         - name: 'Living Room Left'
+           group: '0x0001'
+           serial: '0x106aa01'
+           repeat_count: 4
+         - name: 'Living Room Right'
+           group: '0x0002'
+           serial: '0x106aa02'
+           repeat_count: 4
+         - name: 'Both Living Room Covers'
+           group: '0x0003'  # 0x0001 | 0x0002
+           serial: '0x106aa01'
+           repeat_count: 4
+   ```
+
+## Troubleshooting
+
+### Counter Issues with repeat_count
+
+If you experience issues where you need to press buttons multiple times before covers respond (especially after using `repeat_count > 0`), this was a known bug that has been fixed. Make sure you're using the latest version of the integration.
+
+The fix ensures that when `repeat_count > 0`, each transmission uses a unique, incrementing counter value, maintaining proper KeeLoq security and preventing desynchronization.

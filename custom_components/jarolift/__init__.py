@@ -223,7 +223,9 @@ def setup(hass, config):
     DELAY = domain_config.get(CONF_DELAY, 0)
     counter_file = hass.config.path("counter_")
 
-    _register_services(hass, remote_entity_id, MSB, LSB, DELAY, counter_file)
+    hass.async_create_task(
+        _register_services(hass, remote_entity_id, MSB, LSB, DELAY, counter_file)
+    )
 
     return True
 
@@ -247,7 +249,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # Set up services
     counter_file = hass.config.path("counter_")
-    _register_services(
+    await _register_services(
         hass,
         entry.data[CONF_REMOTE_ENTITY_ID],
         msb_value,
@@ -281,7 +283,7 @@ async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     await async_setup_entry(hass, entry)
 
 
-def _register_services(hass, remote_entity_id, MSB, LSB, DELAY, counter_file):
+async def _register_services(hass, remote_entity_id, MSB, LSB, DELAY, counter_file):
     """Register Jarolift services."""
     # Only register services once
     if hass.services.has_service(DOMAIN, "send_raw"):
@@ -391,9 +393,9 @@ def _register_services(hass, remote_entity_id, MSB, LSB, DELAY, counter_file):
                 RCounter = ReadCounter(counter_file, Serial)
                 WriteCounter(counter_file, Serial, RCounter + 8)
 
-    hass.services.register(DOMAIN, "send_raw", handle_send_raw)
-    hass.services.register(DOMAIN, "send_command", handle_send_command)
-    hass.services.register(DOMAIN, "learn", handle_learn)
-    hass.services.register(DOMAIN, "clear", handle_clear)
+    hass.services.async_register(DOMAIN, "send_raw", handle_send_raw)
+    hass.services.async_register(DOMAIN, "send_command", handle_send_command)
+    hass.services.async_register(DOMAIN, "learn", handle_learn)
+    hass.services.async_register(DOMAIN, "clear", handle_clear)
 
     return True

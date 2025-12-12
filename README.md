@@ -73,6 +73,8 @@ Copy all files from custom_components/jarolift in this repo to your config custo
    - **Reverse Up/Down** (optional): Check this if your cover closes on "up" and opens on "down"
 8. Repeat step 7 for each cover you want to add
 
+**Note:** You can also edit existing covers, remove covers, or modify hub settings (remote entity, MSB, LSB, delay) at any time by clicking **Configure** on the Jarolift integration card and selecting "Edit hub settings" or the appropriate cover action.
+
 #### Setup via YAML (Legacy - Will be migrated automatically)
 
 If you have an existing YAML configuration, it will be automatically imported to UI configuration on the next Home Assistant restart.

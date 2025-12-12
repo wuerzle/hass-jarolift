@@ -96,6 +96,22 @@
         "data": {
           "cover_index": "Cover"
         }
+      },
+      "edit_hub": {
+        "title": "Edit Hub Settings",
+        "description": "Modify the Jarolift hub configuration. Changes will apply after reloading the integration.",
+        "data": {
+          "remote_entity_id": "Remote Entity ID",
+          "MSB": "Manufacturer Key MSB (Most Significant Bits)",
+          "LSB": "Manufacturer Key LSB (Least Significant Bits)",
+          "delay": "Delay between commands (seconds)"
+        },
+        "data_description": {
+          "remote_entity_id": "The entity ID of your remote (e.g., remote.broadlink_rm_proplus_remote)",
+          "MSB": "The MSB part of the manufacturer key in hex format (e.g., '0x12345678')",
+          "LSB": "The LSB part of the manufacturer key in hex format (e.g., '0x87654321')",
+          "delay": "Optional delay between sending commands to different covers"
+        }
       }
     },
     "error": {

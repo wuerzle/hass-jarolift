@@ -27,7 +27,7 @@ This is a Home Assistant custom component that enables control of Jarolift cover
 
 **Installation**: Available via HACS (Home Assistant Community Store) or manual installation. See README.md for details.
 
-**Current Version**: 2.0.0+ (supports UI configuration with automatic YAML migration)
+**Current Version**: 2.0.1 (bug fix for async service registration)
 
 ## Architecture & Core Concepts
 
@@ -372,6 +372,10 @@ cover:
 ### 6. Using print() Instead of Logging
 **Problem**: print() statements fail in production and aren't configurable
 **Solution**: Always use `_LOGGER.debug()`, `.info()`, `.warning()`, or `.error()`
+
+### 7. Calling Synchronous Service Registration from Async Context
+**Problem**: Calling `hass.services.register()` from within an async function (like `async_setup_entry`) causes `RuntimeError: Cannot be called from within the event loop`
+**Solution**: Always use `hass.services.async_register()` in async contexts. Make service registration functions async and use `await` when calling from async contexts, or use `hass.async_create_task()` when calling from sync contexts.
 
 ## Security Considerations
 

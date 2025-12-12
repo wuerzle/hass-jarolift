@@ -211,7 +211,7 @@ def setup(hass, config):
             data=config,
         )
 
-    hass.async_create_task(schedule_import_after_covers_setup())
+    hass.add_job(schedule_import_after_covers_setup())
 
     # Legacy setup for backward compatibility
     domain_config = config[DOMAIN]

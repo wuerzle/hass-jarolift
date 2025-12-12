@@ -1,5 +1,14 @@
-"""
-Support for Jarolift cover
+"""Jarolift Cover Platform.
+
+This module implements the Home Assistant cover entity for Jarolift motorized
+covers (blinds, shutters, awnings). It translates Home Assistant cover commands
+into Jarolift-specific button codes and sends them via the jarolift integration.
+
+Features:
+- Open/Close/Stop commands
+- Reverse mode for covers wired backwards
+- Configurable repeat counts and delays for reliable operation
+- Device info for UI integration
 """
 
 import logging
@@ -136,14 +145,50 @@ async def async_setup_entry(
 
 
 class JaroliftCover(CoverEntity):
-    """Representation a jarolift Cover."""
+    """Representation of a Jarolift motorized cover.
+
+    This entity represents a single Jarolift cover (blind, shutter, or awning)
+    and provides standard Home Assistant cover controls (open, close, stop).
+
+    Button codes used:
+    - 0x2: Down/Close
+    - 0x4: Stop
+    - 0x8: Up/Open
+    - 0xA: Learn (not exposed as entity feature)
+
+    Attributes:
+        code_down: Button code for closing
+        code_stop: Button code for stopping
+        code_up: Button code for opening
+    """
 
     code_down = "0x2"
     code_stop = "0x4"
     code_up = "0x8"
 
-    def __init__(self, name, group, serial, rep_count, rep_delay, reversed, hass, entry_id=None):
-        """Initialize the jarolift device."""
+    def __init__(
+        self,
+        name: str,
+        group: str,
+        serial: str,
+        rep_count: int,
+        rep_delay: float,
+        reversed: bool,
+        hass: HomeAssistant,
+        entry_id: str | None = None,
+    ):
+        """Initialize the Jarolift cover entity.
+
+        Args:
+            name: Display name for the cover
+            group: Group identifier (hex string)
+            serial: Serial number (hex string)
+            rep_count: Number of times to repeat the command (0 = send once)
+            rep_delay: Delay between repeated commands in seconds
+            reversed: If True, swap open/close buttons (for reversed wiring)
+            hass: Home Assistant instance
+            entry_id: Config entry ID (None for YAML mode)
+        """
         self._name = name
         self._group = group
         self._serial = serial
@@ -159,7 +204,7 @@ class JaroliftCover(CoverEntity):
         self._attr_supported_features = supported_features
         self._attr_device_class = CoverDeviceClass.BLIND
         self._attr_unique_id = f"jarolift_{serial}_{group}"
-        
+
         # Add device info if we have an entry_id (config entry mode)
         if entry_id:
             self._attr_device_info = DeviceInfo(
@@ -171,32 +216,32 @@ class JaroliftCover(CoverEntity):
             )
 
     @property
-    def serial(self):
+    def serial(self) -> str:
         """Return the serial of this cover."""
         return self._serial
 
     @property
-    def name(self):
+    def name(self) -> str:
         """Return the name of the cover if any."""
         return self._name
 
     @property
-    def group(self):
+    def group(self) -> str:
         """Return the name of the group if any."""
         return self._group
 
     @property
-    def should_poll(self):
+    def should_poll(self) -> bool:
         """No polling available in Jarolift cover."""
         return False
 
     @property
-    def is_closed(self):
+    def is_closed(self) -> bool | None:
         """Return true if cover is closed, None if unknown."""
         return None
 
     @property
-    def current_cover_position(self):
+    def current_cover_position(self) -> int | None:
         """Return the current position of the cover.
         None is unknown, 0 is closed, 100 is fully open.
         """
@@ -223,7 +268,8 @@ class JaroliftCover(CoverEntity):
         _LOGGER.debug("stopping cover")
         await self.async_push_button(type(self).code_stop)
 
-    async def async_push_button(self, value):
+    async def async_push_button(self, value: str) -> None:
+        """Push a button on the Jarolift cover."""
         await self._hass.services.async_call(
             "jarolift",
             "send_command",

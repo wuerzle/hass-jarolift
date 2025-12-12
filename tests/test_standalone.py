@@ -199,7 +199,7 @@ def test_build_packet():
     try:
         base64.b64decode(packet[4:])
     except Exception as e:
-        assert False, f"Packet is not valid base64: {e}"
+        raise AssertionError(f"Packet is not valid base64: {e}") from e
 
     print(f"  Generated packet: {packet[:50]}...")
     print("✓ BuildPacket tests passed")

@@ -1,12 +1,12 @@
 """Simple tests for Jarolift core functions that don't require Home Assistant."""
 
 import os
-import tempfile
-
-import pytest
 
 # Add the custom_components directory to the path
 import sys
+import tempfile
+
+import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -102,9 +102,8 @@ class TestPacketBuilding:
 
         try:
             base64.b64decode(packet[4:])
-            assert True
-        except Exception:
-            assert False, "Packet is not valid base64"
+        except Exception as exc:
+            raise AssertionError("Packet is not valid base64") from exc
 
     def test_build_packet_with_hold(self):
         """Test BuildPacket with hold flag."""

@@ -1,8 +1,8 @@
 """Tests for counter increment with repeat_count."""
 
 import os
-import tempfile
 import sys
+import tempfile
 
 
 def ReadCounter(counter_file, serial):

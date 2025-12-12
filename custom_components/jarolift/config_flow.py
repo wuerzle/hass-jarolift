@@ -1,4 +1,17 @@
-"""Config flow for Jarolift integration."""
+"""Configuration Flow for Jarolift Integration.
+
+This module provides the configuration UI for setting up the Jarolift integration
+through Home Assistant's configuration flow system.
+
+Features:
+- Initial setup with remote entity, MSB, LSB, and delay
+- YAML import for seamless migration from configuration.yaml
+- Options flow for managing covers (add/edit/remove)
+- Duplicate detection for serial+group combinations
+- Validation of remote entity existence
+
+The flow supports both initial setup and managing covers after integration is configured.
+"""
 
 import logging
 from typing import Any

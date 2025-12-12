@@ -1,5 +1,14 @@
-"""
-Support for Jarolift cover
+"""Jarolift Cover Platform.
+
+This module implements the Home Assistant cover entity for Jarolift motorized
+covers (blinds, shutters, awnings). It translates Home Assistant cover commands
+into Jarolift-specific button codes and sends them via the jarolift integration.
+
+Features:
+- Open/Close/Stop commands
+- Reverse mode for covers wired backwards
+- Configurable repeat counts and delays for reliable operation
+- Device info for UI integration
 """
 
 import logging
@@ -136,16 +145,50 @@ async def async_setup_entry(
 
 
 class JaroliftCover(CoverEntity):
-    """Representation a jarolift Cover."""
+    """Representation of a Jarolift motorized cover.
+
+    This entity represents a single Jarolift cover (blind, shutter, or awning)
+    and provides standard Home Assistant cover controls (open, close, stop).
+
+    Button codes used:
+    - 0x2: Down/Close
+    - 0x4: Stop
+    - 0x8: Up/Open
+    - 0xA: Learn (not exposed as entity feature)
+
+    Attributes:
+        code_down: Button code for closing
+        code_stop: Button code for stopping
+        code_up: Button code for opening
+    """
 
     code_down = "0x2"
     code_stop = "0x4"
     code_up = "0x8"
 
     def __init__(
-        self, name, group, serial, rep_count, rep_delay, reversed, hass, entry_id=None
+        self,
+        name: str,
+        group: str,
+        serial: str,
+        rep_count: int,
+        rep_delay: float,
+        reversed: bool,
+        hass: HomeAssistant,
+        entry_id: str | None = None,
     ):
-        """Initialize the jarolift device."""
+        """Initialize the Jarolift cover entity.
+
+        Args:
+            name: Display name for the cover
+            group: Group identifier (hex string)
+            serial: Serial number (hex string)
+            rep_count: Number of times to repeat the command (0 = send once)
+            rep_delay: Delay between repeated commands in seconds
+            reversed: If True, swap open/close buttons (for reversed wiring)
+            hass: Home Assistant instance
+            entry_id: Config entry ID (None for YAML mode)
+        """
         self._name = name
         self._group = group
         self._serial = serial

@@ -1,6 +1,15 @@
-"""
-Support a 'Jarolift' remote as a separate remote.
-Basically a proxy adding Keeloq encryption to commands sent via another remote then.
+"""Jarolift Home Assistant Integration.
+
+This integration provides support for Jarolift motorized covers (blinds/shutters)
+by adding KeeLoq encryption to commands sent via an RF remote entity (e.g., Broadlink).
+
+The integration:
+- Encrypts commands using the proprietary KeeLoq algorithm
+- Manages rolling counters for replay attack prevention
+- Supports multiple covers with individual configurations
+- Provides services for learning and controlling covers
+
+For more information, see: https://github.com/wuerzle/hass-jarolift
 """
 
 import base64
@@ -85,8 +94,20 @@ def bitSet(value: int, bit: int) -> int:
 
 
 def encrypt(x: int, keyHigh: int, keyLow: int) -> int:
-    """Encrypt a value using KeeLoq algorithm."""
-    KeeLoq_NLF = 0x3A5C742E
+    """Encrypt a value using the KeeLoq algorithm.
+
+    KeeLoq is a proprietary cipher used in RF remote controls. This implementation
+    performs 528 rounds of encryption using a 64-bit key and a non-linear function.
+
+    Args:
+        x: 32-bit value to encrypt
+        keyHigh: High 32 bits of the 64-bit key
+        keyLow: Low 32 bits of the 64-bit key
+
+    Returns:
+        Encrypted 32-bit value
+    """
+    KeeLoq_NLF = 0x3A5C742E  # Non-linear function lookup table
     for r in range(0, 528):
         keyBitNo = r & 63
         if keyBitNo < 32:
@@ -106,8 +127,20 @@ def encrypt(x: int, keyHigh: int, keyLow: int) -> int:
 
 
 def decrypt(x: int, keyHigh: int, keyLow: int) -> int:
-    """Decrypt a value using KeeLoq algorithm."""
-    KeeLoq_NLF = 0x3A5C742E
+    """Decrypt a value using the KeeLoq algorithm.
+
+    This is the inverse operation of the encrypt function, performing 528 rounds
+    of decryption in reverse order.
+
+    Args:
+        x: 32-bit value to decrypt
+        keyHigh: High 32 bits of the 64-bit key
+        keyLow: Low 32 bits of the 64-bit key
+
+    Returns:
+        Decrypted 32-bit value
+    """
+    KeeLoq_NLF = 0x3A5C742E  # Non-linear function lookup table
     for r in range(0, 528):
         keyBitNo = (15 - r) & 63
         if keyBitNo < 32:
@@ -137,7 +170,27 @@ def BuildPacket(
     LSB: int,
     Hold: bool,
 ) -> str:
-    """Build a KeeLoq encrypted packet for transmission."""
+    """Build a KeeLoq encrypted packet for RF transmission.
+
+    This function creates a complete packet that can be sent to a Jarolift cover:
+    1. Derives device-specific keys from the serial number
+    2. Encrypts the counter and device information using KeeLoq
+    3. Assembles the complete 72-bit packet
+    4. Encodes it in the Jarolift RF format
+    5. Returns a base64-encoded string for transmission
+
+    Args:
+        Grouping: Group number for the cover (0x0000-0xFFFF)
+        Serial: Serial number of the cover (unique identifier)
+        Button: Button code (0x2=down, 0x4=stop, 0x8=up, 0xA=learn)
+        Counter: Rolling counter value for replay protection
+        MSB: Manufacturer key (high 32 bits)
+        LSB: Manufacturer key (low 32 bits)
+        Hold: If True, button is held down (for programming)
+
+    Returns:
+        Base64-encoded packet string prefixed with "b64:"
+    """
     # Generate device keys from serial
     keylow = Serial | KEELOQ_KEY_LOW_MASK
     keyhigh = Serial | KEELOQ_KEY_HIGH_MASK

@@ -142,7 +142,9 @@ class JaroliftCover(CoverEntity):
     code_stop = "0x4"
     code_up = "0x8"
 
-    def __init__(self, name, group, serial, rep_count, rep_delay, reversed, hass, entry_id=None):
+    def __init__(
+        self, name, group, serial, rep_count, rep_delay, reversed, hass, entry_id=None
+    ):
         """Initialize the jarolift device."""
         self._name = name
         self._group = group
@@ -159,7 +161,7 @@ class JaroliftCover(CoverEntity):
         self._attr_supported_features = supported_features
         self._attr_device_class = CoverDeviceClass.BLIND
         self._attr_unique_id = f"jarolift_{serial}_{group}"
-        
+
         # Add device info if we have an entry_id (config entry mode)
         if entry_id:
             self._attr_device_info = DeviceInfo(

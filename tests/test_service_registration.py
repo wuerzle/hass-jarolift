@@ -1,10 +1,10 @@
 """Test service registration fix for async context."""
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
-from custom_components.jarolift import DOMAIN, _register_services
+from custom_components.jarolift import _register_services
 
 
 @pytest.mark.asyncio

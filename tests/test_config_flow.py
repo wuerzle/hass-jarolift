@@ -1,8 +1,5 @@
 """Tests for Jarolift config flow."""
 
-from unittest.mock import AsyncMock, Mock, patch
-
-import pytest
 from homeassistant import config_entries, data_entry_flow
 from homeassistant.const import CONF_NAME
 

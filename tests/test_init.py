@@ -1,8 +1,6 @@
 """Tests for Jarolift __init__.py."""
 
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
-
-import pytest
+from unittest.mock import MagicMock, patch
 
 from custom_components.jarolift import (
     DOMAIN,
@@ -148,7 +146,7 @@ async def test_setup_with_yaml_config(hass):
         }
     }
 
-    with patch("custom_components.jarolift.hass") as mock_hass:
+    with patch("custom_components.jarolift.hass"):
         result = setup(hass, config)
 
     assert result is True
@@ -185,7 +183,7 @@ async def test_async_setup_entry(hass, mock_remote_entity):
     with patch(
         "custom_components.jarolift.hass.config_entries.async_forward_entry_setups",
         return_value=True,
-    ) as mock_forward:
+    ):
         result = await async_setup_entry(hass, entry)
 
     assert result is True
@@ -205,7 +203,7 @@ async def test_async_unload_entry(hass, mock_remote_entity):
     with patch(
         "custom_components.jarolift.hass.config_entries.async_unload_platforms",
         return_value=True,
-    ) as mock_unload:
+    ):
         result = await async_unload_entry(hass, entry)
 
     assert result is True

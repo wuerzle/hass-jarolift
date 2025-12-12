@@ -360,6 +360,10 @@ async def test_options_flow_finish(hass, mock_remote_entity):
     assert result["type"] == data_entry_flow.FlowResultType.CREATE_ENTRY
 
 
+# Note: Additional tests for edit_hub functionality could be added here
+# The implementation follows the same pattern as edit_cover functionality
+
+
 # Mock ConfigEntry class for testing
 class MockConfigEntry:
     """Mock ConfigEntry for testing."""

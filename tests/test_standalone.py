@@ -1,11 +1,12 @@
 """Standalone tests for Jarolift core functions."""
+
 import base64
 import os
 import sys
 import tempfile
 
 # Add parent directory to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 
 def bitRead(value, bit):
@@ -93,6 +94,7 @@ def BuildPacket(Grouping, Serial, Button, Counter, MSB, LSB, Hold):
     else:
         codedstring = "b200" + hex(int(slen))[2:] + "00" + codedstring
     import binascii
+
     packet = base64.b64encode(binascii.unhexlify(codedstring))
     return "b64:" + packet.decode("utf-8")
 
@@ -122,6 +124,7 @@ def _parse_hex_config_value(value):
 
 # ===== TESTS =====
 
+
 def test_bit_read():
     """Test bitRead function."""
     print("Testing bitRead...")
@@ -150,7 +153,7 @@ def test_encrypt():
     x = 0x12345678
     keyHigh = 0xABCDEF01
     keyLow = 0x23456789
-    
+
     result = encrypt(x, keyHigh, keyLow)
     assert isinstance(result, int)
     assert result != x
@@ -166,7 +169,7 @@ def test_decrypt():
     x = 0x12345678
     keyHigh = 0xABCDEF01
     keyLow = 0x23456789
-    
+
     result = decrypt(x, keyHigh, keyLow)
     assert isinstance(result, int)
     assert result != x
@@ -180,24 +183,24 @@ def test_build_packet():
     """Test BuildPacket function."""
     print("Testing BuildPacket...")
     grouping = 0x0001
-    serial = 0x106aa01
+    serial = 0x106AA01
     button = 0x2
     counter = 0
     msb = 0x12345678
     lsb = 0x87654321
     hold = False
-    
+
     packet = BuildPacket(grouping, serial, button, counter, msb, lsb, hold)
-    
+
     assert isinstance(packet, str)
     assert packet.startswith("b64:")
-    
+
     # Verify it's valid base64
     try:
         base64.b64decode(packet[4:])
     except Exception as e:
-        assert False, f"Packet is not valid base64: {e}"
-    
+        raise AssertionError(f"Packet is not valid base64: {e}") from e
+
     print(f"  Generated packet: {packet[:50]}...")
     print("✓ BuildPacket tests passed")
 
@@ -206,16 +209,16 @@ def test_build_packet_different_buttons():
     """Test BuildPacket with different button codes."""
     print("Testing BuildPacket with different buttons...")
     grouping = 0x0001
-    serial = 0x106aa01
+    serial = 0x106AA01
     counter = 0
     msb = 0x12345678
     lsb = 0x87654321
     hold = False
-    
+
     packet_down = BuildPacket(grouping, serial, 0x2, counter, msb, lsb, hold)
     packet_stop = BuildPacket(grouping, serial, 0x4, counter, msb, lsb, hold)
     packet_up = BuildPacket(grouping, serial, 0x8, counter, msb, lsb, hold)
-    
+
     assert packet_down != packet_stop
     assert packet_stop != packet_up
     assert packet_down != packet_up
@@ -228,19 +231,19 @@ def test_counter_operations():
     print("Testing counter operations...")
     with tempfile.TemporaryDirectory() as tmpdir:
         counter_file = os.path.join(tmpdir, "counter_")
-        serial = 0x106aa01
-        
+        serial = 0x106AA01
+
         # Test reading non-existent counter
         result = ReadCounter(counter_file, serial)
         assert result == 0
         print("  ✓ Non-existent counter returns 0")
-        
+
         # Test writing and reading
         WriteCounter(counter_file, serial, 42)
         result = ReadCounter(counter_file, serial)
         assert result == 42
         print("  ✓ Write and read counter works")
-        
+
         # Test incrementing
         WriteCounter(counter_file, serial, 1)
         assert ReadCounter(counter_file, serial) == 1
@@ -249,15 +252,15 @@ def test_counter_operations():
         WriteCounter(counter_file, serial, 100)
         assert ReadCounter(counter_file, serial) == 100
         print("  ✓ Counter increment works")
-        
+
         # Test multiple serials
-        serial2 = 0x106aa02
+        serial2 = 0x106AA02
         WriteCounter(counter_file, serial, 10)
         WriteCounter(counter_file, serial2, 20)
         assert ReadCounter(counter_file, serial) == 10
         assert ReadCounter(counter_file, serial2) == 20
         print("  ✓ Multiple serials work")
-    
+
     print("✓ Counter operations tests passed")
 
 
@@ -274,10 +277,10 @@ def test_parse_hex_config_value():
 
 def run_all_tests():
     """Run all tests."""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Running Jarolift Core Functions Tests")
-    print("="*60 + "\n")
-    
+    print("=" * 60 + "\n")
+
     tests = [
         test_bit_read,
         test_bit_set,
@@ -288,10 +291,10 @@ def run_all_tests():
         test_counter_operations,
         test_parse_hex_config_value,
     ]
-    
+
     passed = 0
     failed = 0
-    
+
     for test in tests:
         try:
             test()
@@ -303,11 +306,11 @@ def run_all_tests():
             print(f"✗ {test.__name__} ERROR: {e}")
             failed += 1
         print()
-    
-    print("="*60)
+
+    print("=" * 60)
     print(f"Test Results: {passed} passed, {failed} failed")
-    print("="*60 + "\n")
-    
+    print("=" * 60 + "\n")
+
     return failed == 0
 
 

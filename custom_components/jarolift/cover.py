@@ -1,5 +1,14 @@
-"""
-Support for Jarolift cover
+"""Jarolift Cover Platform.
+
+This module implements the Home Assistant cover entity for Jarolift motorized
+covers (blinds, shutters, awnings). It translates Home Assistant cover commands
+into Jarolift-specific button codes and sends them via the jarolift integration.
+
+Features:
+- Open/Close/Stop commands
+- Reverse mode for covers wired backwards
+- Configurable repeat counts and delays for reliable operation
+- Device info for UI integration
 """
 
 import logging
@@ -15,6 +24,7 @@ from homeassistant.components.cover import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_NAME
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import (
@@ -24,7 +34,12 @@ from . import (
     CONF_REP_DELAY,
     CONF_REVERSE,
     CONF_SERIAL,
+    DEVICE_MANUFACTURER,
+    DEVICE_MODEL,
+    DEVICE_NAME,
+    DEVICE_SW_VERSION,
     DOMAIN,
+    _has_config_entry,
 )
 
 _COVERS_SCHEMA = vol.All(
@@ -56,6 +71,13 @@ _LOGGER = logging.getLogger(__name__)
 
 def setup_platform(hass, config, add_devices, discovery_info=None):
     """Set up the Jarolift covers from YAML (backward compatibility)."""
+    # Check if already configured via config entry (migration already done)
+    if _has_config_entry(hass):
+        _LOGGER.info(
+            "Jarolift covers are managed via UI. YAML cover configuration is ignored."
+        )
+        return
+
     covers_conf = config.get(CONF_COVERS)
 
     # Store cover configs for migration if YAML import is pending
@@ -116,20 +138,57 @@ async def async_setup_entry(
                 cover.get(CONF_REP_DELAY, 0.2),
                 cover.get(CONF_REVERSE, False),
                 hass,
+                config_entry.entry_id,
             )
         )
     async_add_entities(covers)
 
 
 class JaroliftCover(CoverEntity):
-    """Representation a jarolift Cover."""
+    """Representation of a Jarolift motorized cover.
+
+    This entity represents a single Jarolift cover (blind, shutter, or awning)
+    and provides standard Home Assistant cover controls (open, close, stop).
+
+    Button codes used:
+    - 0x2: Down/Close
+    - 0x4: Stop
+    - 0x8: Up/Open
+    - 0xA: Learn (not exposed as entity feature)
+
+    Attributes:
+        code_down: Button code for closing
+        code_stop: Button code for stopping
+        code_up: Button code for opening
+    """
 
     code_down = "0x2"
     code_stop = "0x4"
     code_up = "0x8"
 
-    def __init__(self, name, group, serial, rep_count, rep_delay, reversed, hass):
-        """Initialize the jarolift device."""
+    def __init__(
+        self,
+        name: str,
+        group: str,
+        serial: str,
+        rep_count: int,
+        rep_delay: float,
+        reversed: bool,
+        hass: HomeAssistant,
+        entry_id: str | None = None,
+    ):
+        """Initialize the Jarolift cover entity.
+
+        Args:
+            name: Display name for the cover
+            group: Group identifier (hex string)
+            serial: Serial number (hex string)
+            rep_count: Number of times to repeat the command (0 = send once)
+            rep_delay: Delay between repeated commands in seconds
+            reversed: If True, swap open/close buttons (for reversed wiring)
+            hass: Home Assistant instance
+            entry_id: Config entry ID (None for YAML mode)
+        """
         self._name = name
         self._group = group
         self._serial = serial
@@ -137,6 +196,7 @@ class JaroliftCover(CoverEntity):
         self._rep_delay = rep_delay
         self._reversed = reversed
         self._hass = hass
+        self._entry_id = entry_id
         supported_features = 0
         supported_features |= CoverEntityFeature.OPEN
         supported_features |= CoverEntityFeature.CLOSE
@@ -145,33 +205,43 @@ class JaroliftCover(CoverEntity):
         self._attr_device_class = CoverDeviceClass.BLIND
         self._attr_unique_id = f"jarolift_{serial}_{group}"
 
+        # Add device info if we have an entry_id (config entry mode)
+        if entry_id:
+            self._attr_device_info = DeviceInfo(
+                identifiers={(DOMAIN, entry_id)},
+                name=DEVICE_NAME,
+                manufacturer=DEVICE_MANUFACTURER,
+                model=DEVICE_MODEL,
+                sw_version=DEVICE_SW_VERSION,
+            )
+
     @property
-    def serial(self):
+    def serial(self) -> str:
         """Return the serial of this cover."""
         return self._serial
 
     @property
-    def name(self):
+    def name(self) -> str:
         """Return the name of the cover if any."""
         return self._name
 
     @property
-    def group(self):
+    def group(self) -> str:
         """Return the name of the group if any."""
         return self._group
 
     @property
-    def should_poll(self):
+    def should_poll(self) -> bool:
         """No polling available in Jarolift cover."""
         return False
 
     @property
-    def is_closed(self):
+    def is_closed(self) -> bool | None:
         """Return true if cover is closed, None if unknown."""
         return None
 
     @property
-    def current_cover_position(self):
+    def current_cover_position(self) -> int | None:
         """Return the current position of the cover.
         None is unknown, 0 is closed, 100 is fully open.
         """
@@ -198,7 +268,8 @@ class JaroliftCover(CoverEntity):
         _LOGGER.debug("stopping cover")
         await self.async_push_button(type(self).code_stop)
 
-    async def async_push_button(self, value):
+    async def async_push_button(self, value: str) -> None:
+        """Push a button on the Jarolift cover."""
         await self._hass.services.async_call(
             "jarolift",
             "send_command",

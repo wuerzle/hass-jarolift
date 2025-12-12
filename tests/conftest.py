@@ -1,4 +1,5 @@
 """Common test fixtures for Jarolift tests."""
+
 import pytest
 
 

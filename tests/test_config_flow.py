@@ -1,7 +1,5 @@
 """Tests for Jarolift config flow."""
-from unittest.mock import AsyncMock, Mock, patch
 
-import pytest
 from homeassistant import config_entries, data_entry_flow
 from homeassistant.const import CONF_NAME
 
@@ -127,7 +125,9 @@ async def test_import_from_yaml(hass, mock_yaml_config, mock_remote_entity):
     assert result["data"][CONF_LSB] == "0x87654321"
 
 
-async def test_import_with_covers(hass, mock_yaml_config, mock_remote_entity, mock_cover_config):
+async def test_import_with_covers(
+    hass, mock_yaml_config, mock_remote_entity, mock_cover_config
+):
     """Test importing configuration with covers from YAML."""
     # Mock the remote entity
     hass.states.async_set(mock_remote_entity, "idle")
@@ -205,7 +205,9 @@ async def test_options_flow_add_cover(hass, mock_remote_entity):
     assert result["step_id"] == "manage_covers"
 
 
-async def test_options_flow_add_duplicate_cover(hass, mock_remote_entity, mock_cover_config):
+async def test_options_flow_add_duplicate_cover(
+    hass, mock_remote_entity, mock_cover_config
+):
     """Test adding a duplicate cover through options flow."""
     hass.states.async_set(mock_remote_entity, "idle")
 
@@ -256,7 +258,7 @@ async def test_options_flow_edit_cover(hass, mock_remote_entity, mock_cover_conf
     entry.add_to_hass(hass)
 
     result = await hass.config_entries.options.async_init(entry.entry_id)
-    
+
     # Select edit action
     result = await hass.config_entries.options.async_configure(
         result["flow_id"],
@@ -310,7 +312,7 @@ async def test_options_flow_remove_cover(hass, mock_remote_entity, mock_cover_co
     entry.add_to_hass(hass)
 
     result = await hass.config_entries.options.async_init(entry.entry_id)
-    
+
     # Select remove action
     result = await hass.config_entries.options.async_configure(
         result["flow_id"],
@@ -348,7 +350,7 @@ async def test_options_flow_finish(hass, mock_remote_entity):
     entry.add_to_hass(hass)
 
     result = await hass.config_entries.options.async_init(entry.entry_id)
-    
+
     # Select finish action
     result = await hass.config_entries.options.async_configure(
         result["flow_id"],
@@ -356,6 +358,10 @@ async def test_options_flow_finish(hass, mock_remote_entity):
     )
 
     assert result["type"] == data_entry_flow.FlowResultType.CREATE_ENTRY
+
+
+# Note: Additional tests for edit_hub functionality could be added here
+# The implementation follows the same pattern as edit_cover functionality
 
 
 # Mock ConfigEntry class for testing

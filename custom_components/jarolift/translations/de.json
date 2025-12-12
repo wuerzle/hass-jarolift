@@ -96,6 +96,22 @@
         "data": {
           "cover_index": "Rollo"
         }
+      },
+      "edit_hub": {
+        "title": "Hub-Einstellungen bearbeiten",
+        "description": "Ändern Sie die Jarolift Hub-Konfiguration. Die Änderungen werden nach dem Neuladen der Integration wirksam.",
+        "data": {
+          "remote_entity_id": "Fernbedienungs-Entitäts-ID",
+          "MSB": "Herstellerschlüssel MSB (Most Significant Bits)",
+          "LSB": "Herstellerschlüssel LSB (Least Significant Bits)",
+          "delay": "Verzögerung zwischen Befehlen (Sekunden)"
+        },
+        "data_description": {
+          "remote_entity_id": "Die Entitäts-ID Ihrer Fernbedienung (z.B. remote.broadlink_rm_proplus_remote)",
+          "MSB": "Der MSB-Teil des Herstellerschlüssels im Hex-Format (z.B. '0x12345678')",
+          "LSB": "Der LSB-Teil des Herstellerschlüssels im Hex-Format (z.B. '0x87654321')",
+          "delay": "Optionale Verzögerung zwischen dem Senden von Befehlen an verschiedene Rollos"
+        }
       }
     },
     "error": {

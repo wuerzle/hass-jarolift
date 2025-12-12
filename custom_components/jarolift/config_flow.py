@@ -1,4 +1,17 @@
-"""Config flow for Jarolift integration."""
+"""Configuration Flow for Jarolift Integration.
+
+This module provides the configuration UI for setting up the Jarolift integration
+through Home Assistant's configuration flow system.
+
+Features:
+- Initial setup with remote entity, MSB, LSB, and delay
+- YAML import for seamless migration from configuration.yaml
+- Options flow for managing covers (add/edit/remove)
+- Duplicate detection for serial+group combinations
+- Validation of remote entity existence
+
+The flow supports both initial setup and managing covers after integration is configured.
+"""
 
 import logging
 from typing import Any
@@ -153,6 +166,8 @@ class JaroliftOptionsFlow(config_entries.OptionsFlow):
                 return await self.async_step_select_cover_to_edit()
             elif action == "remove":
                 return await self.async_step_select_cover_to_remove()
+            elif action == "edit_hub":
+                return await self.async_step_edit_hub()
             elif action == "finish":
                 return self.async_create_entry(
                     title="", data={CONF_COVERS: self.covers}
@@ -179,6 +194,7 @@ class JaroliftOptionsFlow(config_entries.OptionsFlow):
                             "add": "Add new cover",
                             "edit": "Edit existing cover",
                             "remove": "Remove cover",
+                            "edit_hub": "Edit hub settings",
                             "finish": "Finish",
                         }
                     ),
@@ -321,4 +337,52 @@ class JaroliftOptionsFlow(config_entries.OptionsFlow):
                     vol.Required("cover_index"): vol.In(cover_options),
                 }
             ),
+        )
+
+    async def async_step_edit_hub(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Edit hub settings."""
+        errors = {}
+
+        if user_input is not None:
+            # Validate remote entity exists
+            if not self.hass.states.get(user_input[CONF_REMOTE_ENTITY_ID]):
+                errors[CONF_REMOTE_ENTITY_ID] = "invalid_remote_entity"
+            else:
+                # Update the config entry data
+                self.hass.config_entries.async_update_entry(
+                    self.config_entry,
+                    data={
+                        CONF_REMOTE_ENTITY_ID: user_input[CONF_REMOTE_ENTITY_ID],
+                        CONF_MSB: user_input[CONF_MSB],
+                        CONF_LSB: user_input[CONF_LSB],
+                        CONF_DELAY: user_input.get(CONF_DELAY, 0),
+                    },
+                )
+                # Return to manage covers menu
+                return await self.async_step_manage_covers()
+
+        # Pre-fill with existing values
+        current_data = self.config_entry.data
+        return self.async_show_form(
+            step_id="edit_hub",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_REMOTE_ENTITY_ID,
+                        default=current_data.get(CONF_REMOTE_ENTITY_ID),
+                    ): cv.string,
+                    vol.Required(
+                        CONF_MSB, default=current_data.get(CONF_MSB)
+                    ): cv.string,
+                    vol.Required(
+                        CONF_LSB, default=current_data.get(CONF_LSB)
+                    ): cv.string,
+                    vol.Optional(
+                        CONF_DELAY, default=current_data.get(CONF_DELAY, 0)
+                    ): vol.Coerce(int),
+                }
+            ),
+            errors=errors,
         )

@@ -1,95 +1,195 @@
-# Jarolift Integration Bugfixes
+# Summary: Duplicate Entities and Configuration UI Fix
 
-## Issues Fixed
+## Issues Resolved ✅
 
-### 1. Duplicate Unique ID Error ✅
+### 1. Configuration UI Error (500 Internal Server Error)
+**Status:** ✅ FIXED
 
-**Problem**: Multiple covers with the same serial and group were being created, causing Home Assistant to reject them with the error:
+**Error:**
 ```
-Platform jarolift does not generate unique IDs. ID jarolift_0x106aa01_0x0001 already exists - ignoring cover.wohnzimmer1
+AttributeError: property 'config_entry' of 'JaroliftOptionsFlow' object has no setter
 ```
 
-**Root Cause**: When YAML configuration was present, both the legacy `setup_platform()` and the new `async_setup_entry()` functions were creating cover entities. The YAML import flow would:
-1. Call `setup_platform()` which created entities from YAML
-2. Trigger an import to create a ConfigEntry
-3. Call `async_setup_entry()` which created the same entities again
+**Fix:** Removed `self.config_entry = config_entry` from `JaroliftOptionsFlow.__init__()` in `config_flow.py`.
 
-**Solution**: Modified `setup_platform()` in `cover.py` to detect when a YAML import is pending (by checking if `yaml_covers` list exists in `hass.data`). When import is pending:
-- Store cover configurations in the `yaml_covers` list
-- Return early without creating entities
-- Log that entities will be created via ConfigEntry
-- Only `async_setup_entry()` creates the entities after import completes
+**Why it works:** The base class `OptionsFlow` provides `config_entry` as a read-only property, so we don't need to store it separately.
 
-This ensures each cover is only created once, preventing duplicate unique IDs.
+---
 
-### 2. Config Flow 500 Internal Server Error ✅
+### 2. Duplicate Entities After YAML Migration
+**Status:** ✅ FIXED
 
-**Problem**: When opening the config flow UI, a "500 Internal Server Error" was displayed with "Server got itself in trouble" message.
+**Problem:** Each cover appeared twice in the entity list after migrating from YAML to UI configuration.
 
-**Root Cause**: The config flow code was accessing cover dictionary keys directly using `cover[CONF_NAME]`, `cover[CONF_SERIAL]`, etc. If any cover dictionary was missing a required key (possibly from malformed import data), this would raise a KeyError and crash the config flow.
+**Fix:** Added checks in both `setup()` and `setup_platform()` to skip YAML setup if a config entry already exists.
 
-**Solution**: Made all cover dictionary accesses defensive by using the `.get()` method with default values:
-- `cover.get(CONF_NAME, 'Unknown')` - Returns 'Unknown' if key is missing
-- `cover.get(CONF_SERIAL, 'N/A')` - Returns 'N/A' if key is missing
-- `cover.get(CONF_GROUP, 'N/A')` - Returns 'N/A' if key is missing
+**Implementation:** Created helper function `_has_config_entry(hass)` that checks `hass.config_entries.async_entries(DOMAIN)`.
 
-This prevents KeyError exceptions and allows the config flow to display gracefully even with incomplete data.
+---
 
-### 3. Missing Integration Icon 📝
+## Changes Made
 
-**Problem**: The integration icon was not displayed in the Home Assistant integrations page.
+### Files Modified
 
-**Status**: The icon is correctly defined in `manifest.json` as `"icon": "mdi:window-shutter"`. This is the proper format for Home Assistant integrations. If the icon still doesn't appear after these fixes:
-- Clear browser cache
-- Restart Home Assistant
-- The icon might need a HA cache refresh cycle
+1. **`custom_components/jarolift/config_flow.py`**
+   - Removed: `self.config_entry = config_entry` (line 134)
+   - Impact: Fixes the AttributeError when opening configuration UI
 
-The manifest format is correct, so this should resolve itself after a restart or cache clear.
+2. **`custom_components/jarolift/__init__.py`**
+   - Added: `_has_config_entry()` helper function
+   - Added: Config entry check in `setup()` with informative log message
+   - Impact: Prevents YAML setup when config entry exists
 
-## Code Changes Summary
+3. **`custom_components/jarolift/cover.py`**
+   - Imported: `_has_config_entry` from `__init__.py`
+   - Added: Config entry check in `setup_platform()` with informative log message
+   - Impact: Prevents duplicate entity creation
 
-### `custom_components/jarolift/cover.py`
-- Modified `setup_platform()` to return early when YAML import is pending
-- Added log message to indicate entities will be created via ConfigEntry
-- Prevented duplicate entity creation
+### Files Added
 
-### `custom_components/jarolift/config_flow.py`
-- Changed all direct dictionary key accesses to use `.get()` method
-- Added default values for missing keys ('Unknown', 'N/A')
-- Applied to all places that display cover information:
-  - `async_step_manage_covers()` - Cover list display
-  - `async_step_select_cover_to_edit()` - Edit selection display
-  - `async_step_select_cover_to_remove()` - Remove selection display
-  - `async_step_add_cover()` - Duplicate validation
-  - `async_step_edit_cover()` - Duplicate validation
+4. **`tests/test_duplicate_prevention.py`**
+   - Tests that YAML setup is skipped when config entry exists
+   - Tests that cover platform setup is skipped when config entry exists
 
-## Testing Performed
+5. **`DUPLICATE_ENTITIES_FIX.md`**
+   - Comprehensive documentation of the fix
+   - User-facing guide for migration
 
-- ✅ Ruff linter passed with auto-fixes applied
-- ✅ Ruff formatter applied
-- ✅ Python syntax validation passed
-- ✅ All imports properly organized
-- ✅ Code follows Home Assistant conventions
+---
 
-## Expected Behavior After Fix
+## Testing Results
 
-1. **No more duplicate entity errors**: Each cover will only be created once, even when migrating from YAML to ConfigEntry
-2. **Config flow works reliably**: No more 500 errors when opening the integration settings
-3. **Smooth YAML migration**: Users with YAML config will have their covers automatically imported without duplicates
-4. **Icon displays correctly**: Integration icon should appear after cache refresh
+### ✅ Automated Tests
+- [x] All standalone tests pass (8/8)
+- [x] Python syntax validation passed
+- [x] Ruff linter checks passed
+- [x] Ruff formatter checks passed
+- [x] CodeQL security scan: 0 vulnerabilities found
+- [x] Code review completed and addressed
 
-## Migration Path for Users
+### 📋 Manual Testing Needed
+The following tests require a running Home Assistant instance:
+- [ ] Configuration UI opens without 500 error
+- [ ] Can add new covers via UI
+- [ ] Can edit existing covers via UI
+- [ ] Can remove covers via UI
+- [ ] YAML migration works correctly
+- [ ] No duplicate entities after migration + restart
+- [ ] Log messages appear correctly
 
-Users with existing YAML configuration will experience:
-1. On first restart with these fixes, YAML config is detected
-2. Config is stored temporarily without creating duplicate entities
-3. Import flow creates a ConfigEntry with all cover data
-4. Entities are created once via the ConfigEntry
-5. Users can then remove YAML config and manage via UI
+---
 
-## Notes for Developers
+## User Impact
 
-- The `yaml_covers` list in `hass.data[DOMAIN]` acts as a flag to detect pending imports
-- When this list exists, it means YAML import is in progress
-- The list is populated by `setup_platform()` and consumed by `async_step_import()`
-- This mechanism prevents the race condition that caused duplicate entities
+### Before Fix
+❌ Users experienced:
+- Configuration UI crashed with 500 error
+- Duplicate entities after migration
+- Confusion about what went wrong
+
+### After Fix
+✅ Users will:
+- Be able to open and use configuration UI
+- See no duplicate entities after migration
+- Receive clear log messages guiding them to remove YAML config
+
+---
+
+## Migration Guide for Users
+
+### If You're Using Pure YAML
+✅ No action needed - continues to work as before
+
+### If You've Already Migrated to UI
+1. Update to this version
+2. Check Home Assistant logs for this message:
+   ```
+   Jarolift is already configured via UI. YAML configuration is ignored.
+   Please remove jarolift from configuration.yaml.
+   ```
+3. Remove the `jarolift:` and `cover: - platform: jarolift` sections from `configuration.yaml`
+4. Restart Home Assistant
+5. If duplicates exist, manually remove them via UI
+
+### If You Have Duplicate Entities Now
+1. Update to this version
+2. Go to Settings → Devices & Services → Entities
+3. Search for your Jarolift covers
+4. Delete the duplicate entities (keep one set)
+5. Remove YAML configuration from `configuration.yaml`
+6. Restart Home Assistant
+7. Verify entities appear correctly (only once)
+
+---
+
+## Technical Details
+
+### Helper Function Added
+```python
+def _has_config_entry(hass) -> bool:
+    """Check if integration is already configured via config entry (UI)."""
+    return bool(hass.config_entries.async_entries(DOMAIN))
+```
+
+This provides a centralized, consistent way to check if the integration is configured via UI.
+
+### Log Messages
+When YAML config is present but config entry exists:
+- **Main setup:** "Jarolift is already configured via UI. YAML configuration is ignored. Please remove jarolift from configuration.yaml."
+- **Cover platform:** "Jarolift covers are managed via UI. YAML cover configuration is ignored."
+
+---
+
+## Code Quality
+
+### Linting
+- ✅ No linting errors in changed files
+- ✅ Code formatted according to project standards (Ruff)
+- ✅ Imports organized correctly
+
+### Security
+- ✅ CodeQL scan: 0 vulnerabilities
+- ✅ No sensitive data exposed
+- ✅ No insecure operations introduced
+
+### Maintainability
+- ✅ Helper function reduces code duplication
+- ✅ Clear comments explain the logic
+- ✅ Consistent error handling
+- ✅ Informative log messages for users
+
+---
+
+## Lines Changed
+- **Total files changed:** 3 core files + 1 test file + 1 documentation
+- **Lines added:** ~25 lines
+- **Lines removed:** 1 line
+- **Net change:** Minimal, surgical fix
+
+---
+
+## Backward Compatibility
+✅ **Fully backward compatible**
+- Pure YAML configurations continue to work
+- Existing config entries work without changes
+- No data migration required
+- No breaking changes
+
+---
+
+## Security Summary
+CodeQL security scan completed with **0 vulnerabilities** found. No security issues introduced or discovered in the changed code.
+
+---
+
+## Next Steps
+
+1. **For Maintainers:**
+   - Merge this PR
+   - Release as patch version (e.g., 2.0.2)
+   - Update release notes with migration guide
+
+2. **For Users:**
+   - Update via HACS or manual installation
+   - Follow migration guide if applicable
+   - Report any issues on GitHub

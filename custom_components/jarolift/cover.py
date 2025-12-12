@@ -56,6 +56,13 @@ _LOGGER = logging.getLogger(__name__)
 
 def setup_platform(hass, config, add_devices, discovery_info=None):
     """Set up the Jarolift covers from YAML (backward compatibility)."""
+    # Check if already configured via config entry (migration already done)
+    if hass.config_entries.async_entries(DOMAIN):
+        _LOGGER.info(
+            "Jarolift covers are managed via UI. YAML cover configuration is ignored."
+        )
+        return
+
     covers_conf = config.get(CONF_COVERS)
 
     # Store cover configs for migration if YAML import is pending

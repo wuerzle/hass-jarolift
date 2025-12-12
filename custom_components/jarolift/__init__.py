@@ -198,6 +198,14 @@ def setup(hass, config):
     if DOMAIN not in config:
         return True
 
+    # Check if already configured via config entry (migration already done)
+    if hass.config_entries.async_entries(DOMAIN):
+        _LOGGER.info(
+            "Jarolift is already configured via UI. YAML configuration is ignored. "
+            "Please remove jarolift from configuration.yaml."
+        )
+        return True
+
     # Store YAML config temporarily for migration
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN]["yaml_config"] = config

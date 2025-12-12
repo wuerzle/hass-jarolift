@@ -225,12 +225,10 @@ def get_counter_value(counter_file: str, serial: int, call_data_counter: str) ->
     Get the counter value to use for a command.
     Returns the appropriate counter based on whether a specific counter was provided.
     """
-    read_counter = ReadCounter(counter_file, serial)
     provided_counter = int(call_data_counter, 16)
-    if provided_counter == 0:
-        return read_counter
-    else:
-        return provided_counter
+    return (
+        ReadCounter(counter_file, serial) if provided_counter == 0 else provided_counter
+    )
 
 
 def parse_hex_param(call_data: dict, param_name: str, default_value: str) -> int:
@@ -247,6 +245,62 @@ def send_remote_command(
         "send_command",
         {"entity_id": remote_entity_id, "command": [packet]},
     )
+
+
+def _send_packets_with_counter(
+    hass: HomeAssistant,
+    remote_entity_id: str,
+    counter_file: str,
+    Grouping: int,
+    Serial: int,
+    Button: int,
+    Counter: int,
+    MSB: int,
+    LSB: int,
+    Hold: bool,
+    send_count: int,
+    rep_delay: float,
+) -> None:
+    """Send packets with automatic counter management.
+
+    Args:
+        hass: Home Assistant instance
+        remote_entity_id: Remote entity to use for transmission
+        counter_file: Base path for counter files
+        Grouping: Device group
+        Serial: Device serial
+        Button: Button code to send
+        Counter: Counter value (0 for auto-increment)
+        MSB: Manufacturer key MSB
+        LSB: Manufacturer key LSB
+        Hold: Whether to hold the button
+        send_count: Number of times to send the packet
+        rep_delay: Delay between repeated sends
+    """
+    if Counter == 0:
+        # Use and increment the stored counter
+        base_counter = ReadCounter(counter_file, Serial)
+        for i in range(send_count):
+            packet = BuildPacket(
+                Grouping, Serial, Button, base_counter + i, MSB, LSB, Hold
+            )
+            _LOGGER.debug(
+                f"Sending: {Button} group: 0x{Grouping:04X} Serial: 0x{Serial:08X} counter: {base_counter + i} repeat: {i}"
+            )
+            send_remote_command(hass, remote_entity_id, packet)
+            if i < send_count - 1:
+                sleep(rep_delay)
+        WriteCounter(counter_file, Serial, base_counter + send_count)
+    else:
+        # User provided explicit counter, send same packet multiple times
+        for i in range(send_count):
+            packet = BuildPacket(Grouping, Serial, Button, Counter, MSB, LSB, Hold)
+            _LOGGER.debug(
+                f"Sending: {Button} group: 0x{Grouping:04X} Serial: 0x{Serial:08X} counter: {Counter} repeat: {i}"
+            )
+            send_remote_command(hass, remote_entity_id, packet)
+            if i < send_count - 1:
+                sleep(rep_delay)
 
 
 def _parse_hex_config_value(value: str) -> int:
@@ -397,40 +451,22 @@ async def _register_services(
 
         # Mutex used so that only one cover will be set when having rep_count > 0
         with mutex:
-            # We want to send at least once. so rep_count 0 means range(1)
+            # We want to send at least once, so rep_count 0 means send once
             send_count = rep_count + 1
-
-            if Counter == 0:
-                # Use and increment the stored counter
-                RCounter = ReadCounter(counter_file, Serial)
-                for i in range(send_count):
-                    # Build packet with incrementing counter for each transmission
-                    packet = BuildPacket(
-                        Grouping, Serial, Button, RCounter + i, MSB, LSB, Hold
-                    )
-                    _LOGGER.debug(
-                        f"Sending: {Button} group: 0x{Grouping:04X} Serial: 0x{Serial:08X} counter: {RCounter + i} repeat: {i}"
-                    )
-                    send_remote_command(hass, remote_entity_id, packet)
-                    if i < send_count - 1:
-                        # Only sleep when an additional command comes afterwards
-                        sleep(rep_delay)
-                # Increment counter by the number of packets sent
-                WriteCounter(counter_file, Serial, RCounter + send_count)
-            else:
-                # User provided explicit counter, send same packet multiple times
-                for i in range(send_count):
-                    packet = BuildPacket(
-                        Grouping, Serial, Button, Counter, MSB, LSB, Hold
-                    )
-                    _LOGGER.debug(
-                        f"Sending: {Button} group: 0x{Grouping:04X} Serial: 0x{Serial:08X} counter: {Counter} repeat: {i}"
-                    )
-                    send_remote_command(hass, remote_entity_id, packet)
-                    if i < send_count - 1:
-                        # Only sleep when an additional command comes afterwards
-                        sleep(rep_delay)
-
+            _send_packets_with_counter(
+                hass,
+                remote_entity_id,
+                counter_file,
+                Grouping,
+                Serial,
+                Button,
+                Counter,
+                MSB,
+                LSB,
+                Hold,
+                send_count,
+                rep_delay,
+            )
             # This is the minimum delay between multiple different covers
             sleep(DELAY)
 

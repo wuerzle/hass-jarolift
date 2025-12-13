@@ -115,7 +115,8 @@
       }
     },
     "error": {
-      "duplicate_cover": "Ein Rollo mit dieser Serien- und Gruppenkombination existiert bereits"
+      "duplicate_cover": "Ein Rollo mit dieser Serien- und Gruppenkombination existiert bereits",
+      "invalid_remote_entity": "Die angegebene Fernbedienungs-Entität existiert nicht"
     }
   },
   "services": {

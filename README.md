@@ -1,5 +1,7 @@
 # Jarolift Integration for Home Assistant
 
+[![hacs_badge](https://img.shields.io/badge/HACS-Default-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/integration)
+
 Control your Jarolift covers (motorized blinds/shutters) through Home Assistant. This custom component acts as a proxy that adds KeeLoq encryption to commands sent via a Home Assistant 'remote' entity (typically a Broadlink RM Pro+ or similar RF transmitter).
 
 ## Features
@@ -37,16 +39,23 @@ Also you need to have a remote configured that is able to send data (via RF) to 
 This could for example be an Broadlink RM PRO+ with the appropriate [Home Assistant Integration](https://www.home-assistant.io/integrations/broadlink/)
 configured.
 
-### Get the integration
+### Installation via HACS (Recommended)
 
-### Manual installation
+1. Ensure [HACS](https://hacs.xyz/) is installed in your Home Assistant instance
+2. Click the button below to open this integration in HACS:
 
-Copy all files from custom_components/jarolift in this repo to your config custom_components/jarolift.
+   [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=wuerzle&repository=hass-jarolift&category=integration)
 
-### Via HACS
+3. Alternatively, search for "Jarolift" in HACS and install it
+4. Restart Home Assistant
+5. Continue with the [Setup](#setup) section below
 
-1. Add this repository as HACS repository (type: integration)
-2. Search for 'jarolift' and install the integration
+### Manual Installation
+
+1. Download the latest release from the [releases page](https://github.com/wuerzle/hass-jarolift/releases)
+2. Copy the `custom_components/jarolift` folder to your Home Assistant's `custom_components` directory
+3. Restart Home Assistant
+4. Continue with the [Setup](#setup) section below
 
 ### Setup
 

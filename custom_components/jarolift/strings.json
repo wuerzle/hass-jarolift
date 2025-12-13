@@ -115,7 +115,8 @@
       }
     },
     "error": {
-      "duplicate_cover": "A cover with this serial and group combination already exists"
+      "duplicate_cover": "A cover with this serial and group combination already exists",
+      "invalid_remote_entity": "The specified remote entity does not exist"
     }
   }
 }

@@ -360,6 +360,99 @@ async def test_options_flow_finish(hass, mock_remote_entity):
     assert result["type"] == data_entry_flow.FlowResultType.CREATE_ENTRY
 
 
+async def test_options_flow_edit_hub_valid(hass, mock_remote_entity):
+    """Test editing hub settings with valid input through options flow."""
+    hass.states.async_set(mock_remote_entity, "idle")
+
+    # Create a config entry
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        unique_id=DOMAIN,
+        data={
+            CONF_REMOTE_ENTITY_ID: mock_remote_entity,
+            CONF_MSB: "0x12345678",
+            CONF_LSB: "0x87654321",
+            CONF_DELAY: 0,
+        },
+        options={CONF_COVERS: []},
+    )
+    entry.add_to_hass(hass)
+
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+
+    # Select edit_hub action
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        user_input={"action": "edit_hub"},
+    )
+
+    assert result["type"] == data_entry_flow.FlowResultType.FORM
+    assert result["step_id"] == "edit_hub"
+
+    # Edit hub settings with valid remote entity
+    new_remote = "remote.new_remote"
+    hass.states.async_set(new_remote, "idle")
+
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        user_input={
+            CONF_REMOTE_ENTITY_ID: new_remote,
+            CONF_MSB: "0xAABBCCDD",
+            CONF_LSB: "0x11223344",
+            CONF_DELAY: 5,
+        },
+    )
+
+    assert result["type"] == data_entry_flow.FlowResultType.FORM
+    assert result["step_id"] == "manage_covers"
+
+
+async def test_options_flow_edit_hub_invalid_remote(hass, mock_remote_entity):
+    """Test editing hub settings with invalid remote entity through options flow."""
+    hass.states.async_set(mock_remote_entity, "idle")
+
+    # Create a config entry
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        unique_id=DOMAIN,
+        data={
+            CONF_REMOTE_ENTITY_ID: mock_remote_entity,
+            CONF_MSB: "0x12345678",
+            CONF_LSB: "0x87654321",
+            CONF_DELAY: 0,
+        },
+        options={CONF_COVERS: []},
+    )
+    entry.add_to_hass(hass)
+
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+
+    # Select edit_hub action
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        user_input={"action": "edit_hub"},
+    )
+
+    assert result["type"] == data_entry_flow.FlowResultType.FORM
+    assert result["step_id"] == "edit_hub"
+
+    # Try to edit hub settings with invalid remote entity
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        user_input={
+            CONF_REMOTE_ENTITY_ID: "remote.nonexistent",
+            CONF_MSB: "0xAABBCCDD",
+            CONF_LSB: "0x11223344",
+            CONF_DELAY: 5,
+        },
+    )
+
+    # Should show form again with error
+    assert result["type"] == data_entry_flow.FlowResultType.FORM
+    assert result["step_id"] == "edit_hub"
+    assert result["errors"] == {CONF_REMOTE_ENTITY_ID: "invalid_remote_entity"}
+
+
 # Note: Additional tests for edit_hub functionality could be added here
 # The implementation follows the same pattern as edit_cover functionality
 

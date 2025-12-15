@@ -11,7 +11,8 @@ Control your Jarolift covers (motorized blinds/shutters) through Home Assistant.
 - **Multiple Covers**: Control individual covers or groups of covers
 - **KeeLoq Security**: Built-in KeeLoq encryption for secure communication
 - **Repeat Transmission**: Configurable repeat count for improved RF reliability
-- **Learning Mode**: Learn new covers directly through Home Assistant services
+- **Learning Mode Buttons**: Each cover has a dedicated learning mode button in the UI for easy pairing
+- **Learning Mode Services**: Learn new covers directly through Home Assistant services
 
 ## Credits
 
@@ -130,8 +131,32 @@ Those are documented in the [services.yaml](https://github.com/wuerzle/hass-jaro
 
 ## Learn covers
 
-Use the provided services from your Home Assistant Developers Tools view to connect to your covers. Use the process that is normally executed when
-learning an original Jarolift remote.
+There are two ways to learn/pair your covers with the Jarolift integration:
+
+### Method 1: Learning Mode Button (Easiest)
+
+Each configured cover has a dedicated learning mode button in the Home Assistant UI:
+
+1. Navigate to **Settings** → **Devices & Services** → **Jarolift**
+2. Click on the device card to see all entities
+3. Find the learning button for your cover (e.g., "Living Room Cover Learn")
+4. Put your Jarolift cover into learning mode (according to manufacturer instructions)
+5. Press the learning button in Home Assistant
+6. The cover should confirm that it has learned the remote
+
+This method is recommended as it's quick and doesn't require knowledge of Home Assistant services.
+
+### Method 2: Using Services (Advanced)
+
+You can also use the `jarolift.learn` service from Home Assistant's Developer Tools. Use the process that is normally executed when learning an original Jarolift remote.
+
+Example service call:
+```yaml
+service: jarolift.learn
+data:
+  group: '0x0001'
+  serial: '0x106aa01'
+```
 
 ## Understanding Groups and Controlling Multiple Covers
 

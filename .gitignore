@@ -5,3 +5,4 @@ __pycache__
 *.pyo
 .coverage
 htmlcov/
+=2022.2.0

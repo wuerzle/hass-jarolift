@@ -30,7 +30,7 @@ DOMAIN = "jarolift"
 _LOGGER = logging.getLogger(__name__)
 mutex = threading.Lock()
 
-PLATFORMS = [Platform.COVER]
+PLATFORMS = [Platform.COVER, Platform.BUTTON]
 
 # Configuration constants
 CONF_REMOTE_ENTITY_ID = "remote_entity_id"
@@ -48,7 +48,7 @@ CONF_REVERSE = "reverse"
 DEVICE_NAME = "Jarolift"
 DEVICE_MANUFACTURER = "Jarolift"
 DEVICE_MODEL = "KeeLoq RF Controller"
-DEVICE_SW_VERSION = "2.0.1"
+DEVICE_SW_VERSION = "2.0.5"
 
 # Button codes for Jarolift commands
 BUTTON_LEARN = 0xA

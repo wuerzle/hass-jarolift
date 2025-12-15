@@ -52,7 +52,7 @@ def test_cover_with_entry_id_has_device_info():
     assert device_info["name"] == "Jarolift"
     assert device_info["manufacturer"] == "Jarolift"
     assert device_info["model"] == "KeeLoq RF Controller"
-    assert device_info["sw_version"] == "2.0.1"
+    assert device_info["sw_version"] == "2.0.5"
 
 
 def test_multiple_covers_same_device():
